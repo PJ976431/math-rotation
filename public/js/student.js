@@ -397,11 +397,8 @@ function draw() {
 
   state.stars.forEach((s, i) => drawStarShape(ctx, s.x, s.y, STAR_COLORS[i % STAR_COLORS.length]));
 
-  if (modeText) modeText.textContent = state.mode === 'star' ? '放置/拖动星星' : '操纵线段 AB';
-  if (angleText) angleText.textContent = `${Math.round(state.angle)}°`;
-  if (centerText) centerText.textContent = state.selectedCenterType === 'A' ? 'A点' : state.selectedCenterType === 'B' ? 'B点' : 'O点';
-  if (starCountText) starCountText.textContent = `${state.stars.length}`;
-  if (oPointText) oPointText.textContent = state.hasO ? `(${state.O.x}, ${state.O.y})` : '未添加';
+  // 【修改】已移除活动三状态提示文字（当前模式、星星数、角度等）的更新逻辑，配合HTML删除文字框，让画布更清爽
+  // 下方的按钮和功能逻辑（如 activity3Page2Tools 等）均完整保留
 
   if (activity3Page2Tools) activity3Page2Tools.classList.toggle('hidden', state.activity3Page !== 2);
   if (oPointStatusWrap) oPointStatusWrap.classList.toggle('hidden', state.activity3Page !== 2);
@@ -730,7 +727,8 @@ pageNavBtn?.addEventListener('click', () => {
   if (state.activity1Step === 1) {
     state.activity1Step = 2;
     if (pageNavBtn) pageNavBtn.textContent = '上一页';
-    if (taskText) taskText.textContent = '任务二：画出线段AB绕点A顺时针旋转90°后的线段';
+    // 【修改1】活动一任务二文本修改为逆时针
+    if (taskText) taskText.textContent = '任务二：画出线段AB绕点A逆时针旋转90°后的线段并拍照上传。';
     if (page1) page1.classList.add('hidden');
     if (page2) page2.classList.remove('hidden');
   } else {
