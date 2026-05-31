@@ -27,4 +27,5 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/${{ github.repository }}:latest
+          tags: ghcr.io/pj976431/math-rotation:latest
+
