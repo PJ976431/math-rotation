@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>《旋转》课堂活动 - 教师端</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="theme-bg">
+  <div class="page-shell">
+    <div class="top-banner">
+      <h1>《旋转》课堂活动</h1>
+      <p id="welcome"></p>
+      <button id="logoutBtn" class="btn small" style="margin-top:10px;">退出登录</button>
+    </div>
+
+    <div class="card">
+      <div class="tabs">
+        <button class="tab-btn active" data-activity="1">活动一</button>
+        <button class="tab-btn" data-activity="2">活动二</button>
+        <button class="tab-btn" data-activity="3">活动三</button>
+      </div>
+
+      <div class="action-row">
+        <button id="refreshBtn" class="btn">刷新作品</button>
+        <button id="clearBtn" class="btn danger">清空当前活动作品</button>
+      </div>
+
+      <!-- 【修改】增加 id="submissionWrapper" 并默认隐藏，仅活动三显示 -->
+      <div id="submissionWrapper" style="margin-top: 18px; padding: 12px; border-radius: 14px; background: #fff7ed; border: 1px solid #fed7aa; display: none;">
+        <h3 style="margin:0 0 8px;">活动三：学生提交状态与截图</h3>
+        <div id="submissionBox" style="font-size:14px; line-height:1.7; color:#334155;">
+          暂无提交
+        </div>
+      </div>
+
+      <div id="works" class="works-list" style="margin-top:16px;"></div>
+      <div id="msg" class="msg"></div>
+    </div>
+  </div>
+
+  <script src="/js/teacher.js"></script>
+</body>
+</html>

@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>《旋转》课堂活动 - 登录</title>
+  <!-- 完美复用您现有的全局样式 -->
+  <link rel="stylesheet" href="/css/style.css" />
+  
+  <style>
+    /* 仅做少量布局微调，让登录页在屏幕居中更美观 */
+    .login-shell {
+      max-width: 480px;
+      margin: 8vh auto 0;
+    }
+    .login-tabs {
+      justify-content: center;
+      margin-bottom: 24px;
+    }
+    .login-tabs .tab-btn {
+      flex: 1;
+      text-align: center;
+      font-size: 16px;
+    }
+    .form-box {
+      margin-bottom: 20px;
+    }
+    .login-btn {
+      width: 100%;
+      font-size: 18px;
+      padding: 14px;
+      margin-top: 8px;
+    }
+    .login-msg {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 15px;
+    }
+    /* 让表单元素在卡片内更协调 */
+    .form-box .group-label {
+      font-size: 16px;
+      margin-bottom: 8px;
+    }
+    .form-box .group-select {
+      font-size: 16px;
+      padding: 12px 16px;
+    }
+  </style>
+</head>
+<body class="theme-bg">
+  <div class="page-shell login-shell">
+    <!-- 顶部 Banner -->
+    <div class="top-banner">
+      <h1>《旋转》课堂活动</h1>
+      <p>探索图形变换的奥秘</p>
+    </div>
+
+    <!-- 登录卡片 -->
+    <div class="card">
+      <form id="loginForm" autocomplete="off">
+        
+        <!-- 身份切换 Tabs (复用 .tabs 和 .tab-btn) -->
+        <div class="tabs login-tabs">
+          <button type="button" class="tab-btn active" data-role="student">我是学生</button>
+          <button type="button" class="tab-btn" data-role="teacher">我是教师</button>
+        </div>
+
+        <!-- 账号选择 (复用 .group-box 和 .group-select) -->
+        <div class="group-box form-box">
+          <label class="group-label" id="usernameLabel" for="username">选择你的账号</label>
+          <select id="username" name="username" class="group-select">
+            <option value="">加载中...</option>
+          </select>
+        </div>
+
+        <!-- 密码输入 -->
+        <div class="group-box form-box">
+          <label class="group-label" for="password">登录密码</label>
+          <input id="password" name="password" type="password" class="group-select" placeholder="默认密码：123456" value="123456" />
+        </div>
+
+        <!-- 登录按钮 (复用 .btn.primary 橙粉渐变) -->
+        <button id="loginBtn" class="btn primary login-btn" type="submit">进入课堂</button>
+        <div id="msg" class="msg login-msg"></div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const tabBtns = document.querySelectorAll('.login-tabs .tab-btn');
+    const usernameLabel = document.getElementById('usernameLabel');
+    const usernameSelect = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const loginForm = document.getElementById('loginForm');
+    const loginBtn = document.getElementById('loginBtn');
+    const msgEl = document.getElementById('msg');
+
+    let currentRole = 'student';
+
+    // 获取用户列表
+    async function fetchUsers(role) {
+      try {
+        usernameSelect.innerHTML = '<option value="">加载中...</option>';
+        const res = await fetch(`/api/public-users?role=${role}`);
+        const data = await res.json();
+        
+        if (res.ok && data.users && data.users.length > 0) {
+          usernameSelect.innerHTML = data.users.map(u => 
+            `<option value="${u.username}">${u.displayName} (${u.username})</option>`
+          ).join('');
+        } else {
+          usernameSelect.innerHTML = '<option value="">暂无账号</option>';
+        }
+      } catch (err) {
+        usernameSelect.innerHTML = '<option value="">网络错误</option>';
+      }
+    }
+
+    // 监听身份切换
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        tabBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentRole = btn.dataset.role;
+        
+        msgEl.textContent = '';
+        
+        if (currentRole === 'student') {
+          usernameLabel.textContent = '选择你的账号';
+        } else {
+          usernameLabel.textContent = '选择教师账号';
+        }
+        
+        fetchUsers(currentRole);
+      });
+    });
+
+    // 登录逻辑
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      msgEl.textContent = '';
+      msgEl.style.color = '#d9534f'; // 恢复 CSS 中定义的错误红色
+
+      const username = usernameSelect.value;
+      const password = passwordInput.value;
+
+      if (!username) {
+        msgEl.textContent = '请选择账号';
+        return;
+      }
+      if (!password) {
+        msgEl.textContent = '请输入密码';
+        return;
+      }
+
+      loginBtn.disabled = true;
+      loginBtn.textContent = '登录中...';
+
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ role: currentRole, username, password })
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.token) {
+          // 存储 Token 和用户信息
+          if (currentRole === 'teacher') {
+            localStorage.setItem('teacherToken', data.token);
+          } else {
+            localStorage.setItem('studentToken', data.token);
+          }
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('role', data.role);
+          localStorage.setItem('username', data.username);
+          localStorage.setItem('displayName', data.displayName);
+
+          msgEl.style.color = '#28a745'; // 成功绿色
+          msgEl.textContent = '登录成功，正在跳转...';
+
+          setTimeout(() => {
+            if (currentRole === 'teacher') {
+              location.href = '/teacher.html';
+            } else {
+              location.href = '/student.html';
+            }
+          }, 500);
+        } else {
+          msgEl.textContent = data.message || '登录失败';
+          loginBtn.disabled = false;
+          loginBtn.textContent = '进入课堂';
+        }
+      } catch (err) {
+        msgEl.textContent = '网络错误，请检查服务器';
+        loginBtn.disabled = false;
+        loginBtn.textContent = '进入课堂';
+      }
+    });
+
+    // 初始化加载学生列表
+    fetchUsers('student');
+  </script>
+</body>
+</html>

@@ -1,0 +1,603 @@
+* {
+  box-sizing: border-box;
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+body.theme-bg {
+  margin: 0;
+  min-height: 100vh;
+  color: #30424d;
+  background:
+    radial-gradient(circle at 10% 10%, rgba(255,255,255,0.85), transparent 28%),
+    radial-gradient(circle at 90% 15%, rgba(255,255,255,0.75), transparent 22%),
+    linear-gradient(180deg, #fffdf8 0%, #f2fbff 45%, #eef9ef 100%);
+  position: relative;
+  overflow-x: hidden;
+}
+
+body.theme-bg::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(circle at 18% 20%, rgba(255, 214, 165, 0.35) 0 14px, transparent 15px),
+    radial-gradient(circle at 82% 18%, rgba(196, 245, 255, 0.45) 0 12px, transparent 13px),
+    radial-gradient(circle at 65% 70%, rgba(194, 255, 214, 0.28) 0 16px, transparent 17px),
+    radial-gradient(circle at 28% 78%, rgba(255, 192, 203, 0.24) 0 13px, transparent 14px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.page-shell {
+  position: relative;
+  z-index: 1;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.top-banner {
+  text-align: center;
+  padding: 18px 16px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.84);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 12px 28px rgba(76, 112, 128, 0.12);
+  margin-bottom: 16px;
+  border: 1px solid rgba(120, 160, 180, 0.15);
+}
+
+.top-banner h1 {
+  margin: 0;
+  font-size: 32px;
+  letter-spacing: 2px;
+  color: #395a66;
+}
+
+.top-banner p {
+  margin: 8px 0 0;
+  color: #5f7480;
+  font-weight: 600;
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.92);
+  color: #30424d;
+  border-radius: 26px;
+  padding: 18px;
+  box-shadow: 0 16px 40px rgba(70, 100, 120, 0.12);
+  border: 1px solid rgba(140, 170, 190, 0.14);
+}
+
+.tabs {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.tab-btn,
+.btn {
+  border: none;
+  border-radius: 999px;
+  padding: 10px 18px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: 0.2s ease;
+}
+
+.tab-btn {
+  background: #eef8ff;
+  color: #3b728d;
+}
+
+.tab-btn.active {
+  background: linear-gradient(135deg, #ffd76a, #ff9bd4);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(255, 155, 212, 0.22);
+}
+
+.btn {
+  background: linear-gradient(135deg, #7ad8b8, #72bfff);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(90, 156, 190, 0.16);
+}
+
+.btn:hover,
+.tab-btn:hover {
+  transform: translateY(-1px);
+  opacity: 0.96;
+}
+
+.btn.small {
+  padding: 8px 14px;
+  font-size: 14px;
+}
+
+.btn.primary {
+  background: linear-gradient(135deg, #ffab5b, #ff7b7b);
+}
+
+.activity-heading {
+  margin-bottom: 16px;
+  padding: 14px 18px;
+  border-radius: 18px;
+  background: #fff8dc;
+  color: #8c6200;
+  font-weight: 900;
+  line-height: 1.7;
+  border: 1px solid rgba(255, 209, 102, 0.3);
+  font-size: 22px;
+}
+
+.activity-panel {
+  margin-top: 10px;
+}
+
+.task-card {
+  background: #ffffff;
+  border: 1px solid #e5edf2;
+  border-radius: 22px;
+  padding: 18px;
+  box-shadow: 0 8px 24px rgba(89, 115, 130, 0.08);
+}
+
+.task-text {
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.7;
+  color: #35515f;
+  margin-bottom: 14px;
+}
+
+.photo-box {
+  border: 2px dashed #b8d9ea;
+  border-radius: 20px;
+  padding: 16px;
+  background: #f8fdff;
+  text-align: center;
+  margin-bottom: 14px;
+}
+
+.camera-btn {
+  background: linear-gradient(135deg, #7bc8ff, #63e0c5);
+  color: #fff;
+  min-width: 180px;
+}
+
+.file-info {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #60707a;
+}
+
+.preview-img {
+  margin-top: 12px;
+  max-width: 100%;
+  max-height: 320px;
+  border-radius: 16px;
+  border: 1px solid #dce8ef;
+}
+
+.button-row,
+.action-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.msg {
+  min-height: 24px;
+  color: #d9534f;
+  font-weight: 700;
+  margin-top: 10px;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.group-box {
+  margin-bottom: 16px;
+  padding: 16px 18px;
+  border-radius: 20px;
+  background: #f7fbff;
+  border: 1px solid #dbeaf2;
+}
+
+.group-label {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 18px;
+  font-weight: 800;
+  color: #35515f;
+}
+
+.group-select {
+  width: 100%;
+  padding: 14px 16px;
+  font-size: 18px;
+  border-radius: 16px;
+  border: 2px solid #dce8ef;
+  background: #fff;
+  color: #30424d;
+  outline: none;
+}
+
+.group-select:focus {
+  border-color: #88c7ff;
+  box-shadow: 0 0 0 4px rgba(136, 199, 255, 0.16);
+}
+
+.large-task-card {
+  padding: 22px;
+}
+
+.big-task-text {
+  font-size: 24px;
+  font-weight: 900;
+  line-height: 1.8;
+  color: #35515f;
+  margin-bottom: 18px;
+}
+
+.large-photo-box {
+  min-height: 360px;
+  padding: 22px;
+  border: 2px dashed #b8d9ea;
+  border-radius: 22px;
+  background: #f8fdff;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.big-camera-btn {
+  font-size: 20px;
+  padding: 16px 26px;
+  min-width: 220px;
+}
+
+.activity-panel textarea {
+  min-height: 220px;
+  font-size: 18px;
+}
+
+.activity-panel input[type="text"] {
+  font-size: 18px;
+}
+
+.star-status {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.86);
+  color: #334155;
+  font-size: 14px;
+  line-height: 1.8;
+  border: 1px solid rgba(120, 160, 180, 0.16);
+}
+
+.star-msg {
+  margin-top: 10px;
+  color: #b91c1c;
+  font-size: 14px;
+}
+
+.star-board {
+  position: relative;
+  width: 100%;
+  min-height: 560px;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #f8fbff;
+  box-shadow: 0 16px 40px rgba(70, 100, 120, 0.10);
+  border: 1px solid #dce8ef;
+}
+
+.star-canvas {
+  width: 100%;
+  height: 560px;
+  display: block;
+  cursor: crosshair;
+}
+
+.star-tools {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.star-tools .btn {
+  min-width: 140px;
+}
+
+.star-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.84);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+  border: 1px solid rgba(120, 160, 180, 0.18);
+}
+
+.star-logo {
+  width: 120px;
+  height: 120px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #f5fbff, #eaf6ff);
+  box-shadow: 0 0 20px rgba(136, 199, 255, 0.18);
+  flex: 0 0 auto;
+  border: 1px solid rgba(120, 160, 180, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4a7282;
+  font-weight: 900;
+  font-size: 18px;
+}
+
+.star-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.star-title-box h2 {
+  margin: 0;
+  font-size: 26px;
+  color: #395a66;
+}
+
+.star-title-box p {
+  margin: 6px 0 0;
+  color: #5f7480;
+  line-height: 1.7;
+  font-size: 14px;
+}
+
+.activity3-nav-bottom {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.activity3-page-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #eef8ff;
+  color: #3b728d;
+  font-weight: 800;
+  font-size: 14px;
+  border: 1px solid #d8eaf5;
+}
+
+.board-tip {
+  font-size: 13px;
+  color: #5f7480;
+  margin-top: 8px;
+}
+
+.activity3-page-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+@media (max-width: 768px) {
+  .top-banner h1 {
+    font-size: 26px;
+  }
+
+  .task-text {
+    font-size: 18px;
+  }
+
+  .page-shell {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .activity-heading {
+    font-size: 18px;
+  }
+
+  .big-task-text {
+    font-size: 20px;
+  }
+
+  .large-photo-box {
+    min-height: 280px;
+  }
+
+  .group-label,
+  .group-select,
+  .file-info,
+  .big-camera-btn {
+    font-size: 16px;
+  }
+
+  .star-title-box h2 {
+    font-size: 22px;
+  }
+
+  .star-canvas {
+    height: 440px;
+  }
+
+  .star-board {
+    min-height: 440px;
+  }
+}
+/* =====================
+   教师端作品展示网格布局
+   ===================== */
+
+/* 1. 活动一/二的区域容器：设置为网格 */
+.work-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+/* 让标题和“暂无作品”的提示占满整行 */
+.work-section .section-title,
+.work-section > p {
+  grid-column: 1 / -1; 
+}
+
+.work-section .section-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: #35515f;
+  margin: 0 0 4px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px dashed #b8d9ea; /* 复用您现有的虚线风格 */
+}
+
+/* 2. 统一的作品卡片样式 */
+.work-card {
+  background: #ffffff;
+  border: 1px solid #e5edf2;
+  border-radius: 18px; /* 复用现有的圆角 */
+  padding: 16px;
+  box-shadow: 0 6px 16px rgba(89, 115, 130, 0.06);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.work-card:hover {
+  transform: translateY(-3px); /* 鼠标悬浮时微微上浮 */
+  box-shadow: 0 12px 24px rgba(89, 115, 130, 0.12);
+}
+
+/* 卡片顶部的元数据（作者、小组等） */
+.work-card .meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 13px;
+  color: #60707a;
+  margin-bottom: 12px;
+}
+
+.work-card .meta span {
+  background: #f7fbff;
+  padding: 3px 10px;
+  border-radius: 8px;
+  border: 1px solid #dbeaf2;
+}
+
+/* 3. 核心：限制图片高度，保证卡片整齐 */
+.work-card img.work-image {
+  width: 100%;
+  max-height: 220px; /* 限制最大高度，让一排的卡片高度基本一致 */
+  object-fit: contain; /* 保证图片等比例缩放，不拉伸 */
+  background: #f8fdff;
+  border-radius: 12px;
+  border: 1px solid #dce8ef;
+  margin-bottom: 12px;
+  cursor: zoom-in; /* 鼠标变成放大镜 */
+}
+
+/* 卡片底部的删除按钮 */
+.work-card .action-row {
+  margin-top: auto; /* 将按钮推到底部 */
+  display: flex;
+  justify-content: flex-end;
+}
+
+.work-card .btn.danger {
+  background: linear-gradient(135deg, #ff7b7b, #ff5d8f);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(255, 93, 143, 0.2);
+  transition: 0.2s;
+}
+
+.work-card .btn.danger:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+/* 活动三专属容器也设置为网格 */
+#submissionBox {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+/* =====================
+   图片放大遮罩层 (Lightbox)
+   ===================== */
+.lightbox-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85); /* 黑色半透明背景 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999; /* 确保在最顶层 */
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s, visibility 0.3s;
+  cursor: zoom-out; /* 鼠标变成缩小图标 */
+}
+
+.lightbox-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.lightbox-overlay img {
+  max-width: 90%;
+  max-height: 90%;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  transform: scale(0.9);
+  transition: transform 0.3s;
+}
+
+.lightbox-overlay.active img {
+  transform: scale(1); /* 放大动画 */
+}
+
+.lightbox-close {
+  position: absolute;
+  top: 20px;
+  right: 30px;
+  color: #fff;
+  font-size: 40px;
+  font-weight: bold;
+  cursor: pointer;
+  line-height: 1;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  transition: transform 0.2s;
+}
+
+.lightbox-close:hover {
+  transform: scale(1.2);
+}
