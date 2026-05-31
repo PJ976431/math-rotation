@@ -51,14 +51,12 @@
       <!-- 活动一 -->
       <div id="activity1Panel" class="activity-panel">
         <div id="activity1Page1" class="activity1-page">
-          <div class="task-card large-task-card">
-            <div id="taskText" class="task-text big-task-text">任务一：在方格纸上画出旋转后的线段AB并拍照上传</div>
-          </div>
+          <!-- 【修改1】统一为 activity-heading 样式，去掉了外层多余的白色卡片 -->
+          <div id="taskText" class="activity-heading">任务一：在方格纸上画出旋转后的线段AB并拍照上传</div>
         </div>
         <div id="activity1Page2" class="activity1-page hidden">
-          <div class="task-card large-task-card">
-            <div id="taskTextPage2" class="task-text big-task-text">任务二：画出线段AB绕点A顺时针旋转90°后的线段</div>
-          </div>
+          <!-- 【修改2】统一为 activity-heading 样式 -->
+          <div id="taskTextPage2" class="activity-heading">任务二：画出线段AB绕点A逆时针旋转90°后的线段并拍照上传。</div>
         </div>
 
         <div class="group-box">
@@ -86,8 +84,9 @@
         <div class="task-card large-task-card">
           <div id="activity23TaskText" class="task-text big-task-text"></div>
 
-          <div style="background: #e0f2fe; padding: 12px; border-radius: 8px; margin-bottom: 15px; color: #0369a1; font-weight: bold; font-size: 16px; border: 1px solid #bae6fd;">
-            任务要求：旋转线段AB碰到所有星星并记录下是如何旋转的
+          <!-- 【修改3】统一为 activity-heading 样式，替换了原来的蓝色内联样式 -->
+          <div class="activity-heading" style="margin-bottom: 15px;">
+            任务要求：旋转线段AB碰到所有星星并说一说是如何旋转的。
           </div>
 
           <div class="group-box">
@@ -99,7 +98,7 @@
 
           <div class="activity2-rule-box">
             <h3>游戏规则：</h3>
-            <p>①线段AB只能旋转一次；②旋转过程中，必须保持线段AB的长度不变，星星的位置也不能移动；③只有当端点A或B碰到星星，才算成功获取。</p>
+            <p>①旋转过程中，必须保持线段AB的长度不变，星星的位置也不能移动；<br>②只有当端点A或B碰到星星，才算成功获取！</p>
           </div>
 
           <div class="activity2-step-box">
@@ -124,8 +123,6 @@
             </div>
           </div>
 
-          <!-- 【已删除】活动二的提交按钮区块 -->
-
         </div>
       </div>
 
@@ -144,14 +141,6 @@
               <select id="groupSelect3" class="group-select">
                 <option value="第一小组">第一小组</option><option value="第二小组">第二小组</option><option value="第三小组">第三小组</option><option value="第四小组">第四小组</option><option value="第五小组">第五小组</option><option value="第六小组">第六小组</option><option value="第七小组">第七小组</option><option value="第八小组">第八小组</option><option value="第九小组">第九小组</option><option value="第十小组">第十小组</option><option value="第十一小组">第十一小组</option><option value="第十二小组">第十二小组</option>
               </select>
-            </div>
-
-            <div class="star-status">
-              当前模式：<span id="modeText">放置/拖动星星</span><br>
-              已放置星星：<span id="starCount">0</span> / 5<br>
-              当前角度：<span id="angleText">0°</span><br>
-              旋转中心：<span id="centerText">A点 / B点</span><br>
-              <span id="oPointStatusWrap" class="hidden">O点：<span id="oPointText">未添加</span></span>
             </div>
 
             <div class="star-tools">
@@ -183,7 +172,6 @@
             </div>
 
             <div class="button-row" style="justify-content: space-between; align-items: center;">
-              <!-- 【修改②】文字改为“提交” -->
               <button id="submitStarBtn" class="btn primary">提交</button>
               <div class="activity3-nav-bottom">
                 <button id="activity3PrevBtn" class="btn hidden">上一页</button>
