@@ -46,17 +46,17 @@
         <button class="tab-btn" data-activity="3">活动三</button>
       </div>
 
-      <div id="activityHeading" class="activity-heading"></div>
+      <!-- 【修改3】已删除此处的 <div id="activityHeading" class="activity-heading"></div>，解决所有活动页面顶部出现黄色无文字框的问题 -->
 
       <!-- 活动一 -->
       <div id="activity1Panel" class="activity-panel">
         <div id="activity1Page1" class="activity1-page">
-          <!-- 【修改1】统一为 activity-heading 样式，去掉了外层多余的白色卡片 -->
-          <div id="taskText" class="activity-heading">任务一：在方格纸上画出旋转后的线段AB并拍照上传</div>
+          <!-- 【修改2】替换为“任务要求” -->
+          <div id="taskText" class="activity-heading">任务要求：在方格纸上画出旋转后的线段AB并拍照上传</div>
         </div>
         <div id="activity1Page2" class="activity1-page hidden">
-          <!-- 【修改2】统一为 activity-heading 样式 -->
-          <div id="taskTextPage2" class="activity-heading">任务二：画出线段AB绕点A逆时针旋转90°后的线段并拍照上传。</div>
+          <!-- 【修改2】替换为“任务要求” -->
+          <div id="taskTextPage2" class="activity-heading">任务要求：画出线段AB绕点A逆时针旋转90°后的线段并拍照上传。</div>
         </div>
 
         <div class="group-box">
@@ -84,7 +84,6 @@
         <div class="task-card large-task-card">
           <div id="activity23TaskText" class="task-text big-task-text"></div>
 
-          <!-- 【修改3】统一为 activity-heading 样式，替换了原来的蓝色内联样式 -->
           <div class="activity-heading" style="margin-bottom: 15px;">
             任务要求：旋转线段AB碰到所有星星并说一说是如何旋转的。
           </div>
