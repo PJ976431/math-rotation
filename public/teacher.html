@@ -26,6 +26,20 @@
         <button id="clearBtn" class="btn danger">清空当前活动作品</button>
       </div>
 
+      <!-- 【新增】教师端活动二专属演示面板 -->
+      <div id="teacherActivity2Panel" style="display:none; margin-top: 18px; margin-bottom: 20px;">
+        <div class="task-card large-task-card" style="background: #fff; border: 2px solid #e2e8f0; border-radius: 24px; padding: 20px; box-shadow: 0 6px 0 #f1f5f9;">
+          <h3 style="margin: 0 0 12px; font-size: 22px; color: #0369a1; font-weight: 900;">👨‍🏫 教师演示：线段AB绕点A逆时针旋转90°</h3>
+          <div style="padding: 12px; border-radius: 14px; background: #f8fbff; border: 1px solid #dce8ef;">
+            <canvas id="teacherA2Canvas" style="width: 100%; height: 420px; display: block; border-radius: 12px; background: #fff; border: 1px solid #dce8ef; touch-action: none;"></canvas>
+          </div>
+          <div style="margin-top: 14px; display: flex; gap: 12px; flex-wrap: wrap;">
+            <button id="teacherA2AutoBtn" class="btn primary">▶️ 自动演示旋转线段</button>
+            <button id="teacherA2ResetBtn" class="btn">🔄 重置</button>
+          </div>
+        </div>
+      </div>
+
       <!-- 【修改】增加 id="submissionWrapper" 并默认隐藏，仅活动三显示 -->
       <div id="submissionWrapper" style="margin-top: 18px; padding: 12px; border-radius: 14px; background: #fff7ed; border: 1px solid #fed7aa; display: none;">
         <h3 style="margin:0 0 8px;">活动三：学生提交状态与截图</h3>
