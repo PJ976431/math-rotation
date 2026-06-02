@@ -4,11 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>《旋转》课堂活动 - 登录</title>
-  <!-- 完美复用您现有的全局样式 -->
   <link rel="stylesheet" href="/css/style.css" />
   
   <style>
-    /* 仅做少量布局微调，让登录页在屏幕居中更美观 */
     .login-shell {
       max-width: 480px;
       margin: 8vh auto 0;
@@ -36,7 +34,6 @@
       margin-top: 16px;
       font-size: 15px;
     }
-    /* 让表单元素在卡片内更协调 */
     .form-box .group-label {
       font-size: 16px;
       margin-bottom: 8px;
@@ -52,20 +49,18 @@
     <!-- 顶部 Banner -->
     <div class="top-banner">
       <h1>《旋转》课堂活动</h1>
-      <p>探索图形变换的奥秘</p>
+      <!-- 【修改1】已删除“探索图形变换的奥秘”文字 -->
     </div>
 
     <!-- 登录卡片 -->
     <div class="card">
       <form id="loginForm" autocomplete="off">
         
-        <!-- 身份切换 Tabs (复用 .tabs 和 .tab-btn) -->
         <div class="tabs login-tabs">
           <button type="button" class="tab-btn active" data-role="student">我是学生</button>
           <button type="button" class="tab-btn" data-role="teacher">我是教师</button>
         </div>
 
-        <!-- 账号选择 (复用 .group-box 和 .group-select) -->
         <div class="group-box form-box">
           <label class="group-label" id="usernameLabel" for="username">选择你的账号</label>
           <select id="username" name="username" class="group-select">
@@ -73,13 +68,11 @@
           </select>
         </div>
 
-        <!-- 密码输入 -->
         <div class="group-box form-box">
           <label class="group-label" for="password">登录密码</label>
           <input id="password" name="password" type="password" class="group-select" placeholder="默认密码：123456" value="123456" />
         </div>
 
-        <!-- 登录按钮 (复用 .btn.primary 橙粉渐变) -->
         <button id="loginBtn" class="btn primary login-btn" type="submit">进入课堂</button>
         <div id="msg" class="msg login-msg"></div>
       </form>
@@ -97,7 +90,6 @@
 
     let currentRole = 'student';
 
-    // 获取用户列表
     async function fetchUsers(role) {
       try {
         usernameSelect.innerHTML = '<option value="">加载中...</option>';
@@ -116,7 +108,6 @@
       }
     }
 
-    // 监听身份切换
     tabBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         tabBtns.forEach(b => b.classList.remove('active'));
@@ -135,11 +126,10 @@
       });
     });
 
-    // 登录逻辑
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       msgEl.textContent = '';
-      msgEl.style.color = '#d9534f'; // 恢复 CSS 中定义的错误红色
+      msgEl.style.color = '#d9534f'; 
 
       const username = usernameSelect.value;
       const password = passwordInput.value;
@@ -166,7 +156,6 @@
         const data = await res.json();
 
         if (res.ok && data.token) {
-          // 存储 Token 和用户信息
           if (currentRole === 'teacher') {
             localStorage.setItem('teacherToken', data.token);
           } else {
@@ -177,7 +166,7 @@
           localStorage.setItem('username', data.username);
           localStorage.setItem('displayName', data.displayName);
 
-          msgEl.style.color = '#28a745'; // 成功绿色
+          msgEl.style.color = '#28a745'; 
           msgEl.textContent = '登录成功，正在跳转...';
 
           setTimeout(() => {
@@ -199,7 +188,6 @@
       }
     });
 
-    // 初始化加载学生列表
     fetchUsers('student');
   </script>
 </body>
