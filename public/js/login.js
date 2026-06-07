@@ -5,7 +5,7 @@ const passwordInput = document.getElementById('password');
 const msgEl = document.getElementById('msg');
 
 function renderUserOptions() {
-  const role = roleSelect.value;
+  const role = roleSelect ? roleSelect.value : 'student';
   usernameSelect.innerHTML = '';
 
   const placeholder = document.createElement('option');
@@ -19,10 +19,12 @@ function renderUserOptions() {
     option.textContent = 'teacher';
     usernameSelect.appendChild(option);
   } else if (role === 'student') {
+    const numMap = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '十一', '十二', '十三', '十四', '十五', '十六', '十七', '十八', '十九', '二十'];
     for (let i = 1; i <= 20; i++) {
       const option = document.createElement('option');
-      option.value = `student${i}`;
-      option.textContent = `student${i}`;
+      const name = `第${numMap[i-1]}小组`;
+      option.value = name;
+      option.textContent = name;
       usernameSelect.appendChild(option);
     }
   }
@@ -30,92 +32,53 @@ function renderUserOptions() {
   usernameSelect.value = '';
 }
 
-// 初始化账号列表
 renderUserOptions();
 
-// 切换身份时更新账号列表，并清空密码
-roleSelect.addEventListener('change', () => {
-  renderUserOptions();
-  passwordInput.value = '';
-  msgEl.textContent = '';
-});
+if(roleSelect) {
+  roleSelect.addEventListener('change', () => {
+    renderUserOptions();
+    passwordInput.value = '';
+    msgEl.textContent = '';
+  });
+}
 
-// 提交登录
 if (loginForm) {
   loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     msgEl.textContent = '';
 
-    const role = roleSelect.value.trim();
+    const role = roleSelect ? roleSelect.value.trim() : 'student';
     const username = usernameSelect.value.trim();
     const password = passwordInput.value.trim();
 
-    if (!role) {
-      msgEl.textContent = '请选择身份';
-      return;
-    }
-
-    if (!username) {
-      msgEl.textContent = '请选择账号';
-      return;
-    }
-
-    if (!password) {
-      msgEl.textContent = '请输入密码';
-      return;
-    }
+    if (!username) { msgEl.textContent = '请选择账号'; return; }
+    if (!password) { msgEl.textContent = '请输入密码'; return; }
 
     try {
       const res = await fetch('/api/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          role,
-          username,
-          password
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role, username, password })
       });
 
       const data = await res.json();
-
-      if (!res.ok) {
-        msgEl.textContent = data.message || '登录失败';
-        return;
-      }
+      if (!res.ok) { msgEl.textContent = data.message || '登录失败'; return; }
 
       const token = data.token;
-
-      if (!token) {
-        msgEl.textContent = '登录成功但未返回 token';
-        return;
-      }
+      if (!token) { msgEl.textContent = '登录成功但未返回 token'; return; }
 
       if (role === 'teacher') {
         localStorage.setItem('teacherToken', token);
         localStorage.setItem('role', 'teacher');
         localStorage.setItem('username', data.username || username);
         if (data.displayName) localStorage.setItem('displayName', data.displayName);
-
-        localStorage.removeItem('studentToken');
-        localStorage.removeItem('studentCurrentActivity');
-        localStorage.removeItem('studentCurrentTask');
-        localStorage.removeItem('studentGroup');
-
         location.href = '/teacher.html';
       } else if (role === 'student') {
         localStorage.setItem('studentToken', token);
         localStorage.setItem('role', 'student');
         localStorage.setItem('username', data.username || username);
         if (data.displayName) localStorage.setItem('displayName', data.displayName);
-
-        localStorage.removeItem('teacherToken');
-        localStorage.removeItem('teacherCurrentActivity');
-
         location.href = '/student.html';
-      } else {
-        msgEl.textContent = '身份类型错误';
       }
     } catch (err) {
       console.error(err);
