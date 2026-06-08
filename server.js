@@ -25,11 +25,12 @@ if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 if (!fs.existsSync(worksFile)) fs.writeFileSync(worksFile, JSON.stringify([], null, 2), 'utf-8');
 if (!fs.existsSync(submissionsFile)) fs.writeFileSync(submissionsFile, JSON.stringify([], null, 2), 'utf-8');
 
-const numMap = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '十一', '十二', '十三', '十四', '十五', '十六', '十七', '十八', '十九', '二十'];
+// 【修改①】只保留第一到第十小组
+const numMap = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
 
 const defaultUsers = {
   teacher: [{ username: 'teacher', password: '123456', displayName: '教师' }],
-  student: Array.from({ length: 20 }, (_, i) => {
+  student: Array.from({ length: 10 }, (_, i) => {
     const name = `第${numMap[i]}小组`;
     return { username: name, password: '123456', displayName: name };
   })
@@ -45,8 +46,8 @@ function loadUsers() {
     let parsed = JSON.parse(data);
     let needSave = false;
     
-    // 【核心修复】自动检测并迁移旧版 student1-20 账号
-    if (parsed.student && parsed.student.some(u => u.username.startsWith('student'))) {
+    // 自动检测并迁移旧版账号，强制更新为10个小组
+    if (!parsed.student || parsed.student.length !== 10 || parsed.student.some(u => u.username.startsWith('student'))) {
       parsed.student = defaultUsers.student;
       needSave = true;
     }
