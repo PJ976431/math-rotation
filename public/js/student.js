@@ -20,15 +20,14 @@ const submitBtn = document.getElementById('submitBtn');
 const a1Canvas = document.getElementById('activity1Canvas');
 const a1Ctx = a1Canvas ? a1Canvas.getContext('2d') : null;
 const a1ResetBtn = document.getElementById('a1ResetBtn');
+const a1PenBtn = document.getElementById('a1PenBtn');
+const a1EraserBtn = document.getElementById('a1EraserBtn');
 
 // 任务二
 const a2Canvas = document.getElementById('activity2Canvas');
 const a2Ctx = a2Canvas ? a2Canvas.getContext('2d') : null;
 const a2ModeLineBtn = document.getElementById('a2ModeLineBtn');
-const a2ClearTrailBtn = document.getElementById('a2ClearTrailBtn');
 const a2ResetBtn = document.getElementById('a2ResetBtn');
-const a2TrailA = document.getElementById('a2TrailA');
-const a2TrailB = document.getElementById('a2TrailB');
 
 // 任务三
 const starCanvas = document.getElementById('starCanvas');
@@ -56,6 +55,8 @@ const a4PrevBtn = document.getElementById('a4PrevBtn');
 const a4NextBtn = document.getElementById('a4NextBtn');
 const a4SubmitBtn = document.getElementById('a4SubmitBtn');
 const a4Msg = document.getElementById('a4Msg');
+const a4PenBtn = document.getElementById('a4PenBtn');
+const a4EraserBtn = document.getElementById('a4EraserBtn');
 
 if (welcomeEl) welcomeEl.textContent = `欢迎你，${displayName || '同学'}！`;
 
@@ -78,13 +79,14 @@ const STAR_COLORS = ['#ff5d8f', '#7c5cff', '#4cc9f0', '#f9c74f', '#43aa8b'];
 
 const a1State = {
   width: 0, height: 0, A: null, B: null,
-  isDrawing: false, drawStart: null, drawEnd: null, drawnLine: null
+  isDrawing: false, drawStart: null, drawEnd: null, drawnLine: null,
+  tool: 'none', strokes: [], currentStroke: null
 };
 
 const a2State = {
   width: 0, height: 0, A: null, B: null, selectedCenterType: 'A', angle: 0,
-  draggingLine: false, dragStartAngle: 0, dragStartObjAngle: 0,
-  fixedStars: [], trails: { A: [], B: [] }, activeTrail: { A: true, B: true }
+  draggingLine: false, lastMouseAngle: 0, // 【修改④】改用 lastMouseAngle 累加
+  fixedStars: []
 };
 
 const state = {
@@ -92,15 +94,16 @@ const state = {
   selectedCenterType: 'A', angle: 0, animating: false, rafId: null, mode: 'star',
   stars: [], draggingStarIndex: -1, dragOffsetX: 0, dragOffsetY: 0,
   draggingLine: false, draggingO: false, lineDragOffset: { x: 0, y: 0 },
-  dragStartAngle: 0, dragStartObjAngle: 0,
-  trails: { A: [], B: [], O: [] }, // 移除了 seg
+  lastMouseAngle: 0, // 【修改⑤】改用 lastMouseAngle 累加
+  trails: { A: [], B: [], O: [] }, 
   activeTrail: { A: false, B: false, O: false }, 
   activity3Page: 1, awaitingOPlacement: false
 };
 
 const a4State = {
   width: 0, height: 0, M: null, N: null, P: null, page: 1,
-  isDrawing: false, drawStart: null, drawEnd: null, drawnLine: null
+  isDrawing: false, drawStart: null, drawEnd: null, drawnLine: null,
+  tool: 'none', strokes: [], currentStroke: null
 };
 
 function setMsg(text) { if (starMsg) starMsg.textContent = text || ''; }
@@ -143,7 +146,10 @@ function drawStarShape(context, x, y, color) {
 function drawPoint(context, p, label, color) {
   context.save(); context.fillStyle = color; context.strokeStyle = color; context.lineWidth = 2;
   context.beginPath(); context.arc(p.x, p.y, 7, 0, Math.PI * 2); context.fill(); context.stroke();
-  context.fillStyle = '#1f2d3d'; context.font = 'bold 16px sans-serif'; context.fillText(label, p.x + 10, p.y - 10); context.restore();
+  if (label) {
+    context.fillStyle = '#1f2d3d'; context.font = 'bold 16px sans-serif'; context.fillText(label, p.x + 10, p.y - 10); 
+  }
+  context.restore();
 }
 
 function drawCenter(context, c, label = '', color = '#27ae60') {
@@ -170,12 +176,21 @@ function drawTrail(context, points, color) {
   context.stroke(); context.restore();
 }
 
+// 【修改④⑤】重构圆弧绘制，支持 0°-360° 及以上连续旋转
 function drawRotationArc(context, center, radius, startAngle, endAngle, color) {
   context.save();
   context.strokeStyle = color; context.fillStyle = color; context.lineWidth = 2.5; context.setLineDash([]);
-  let diff = normalizeAngleDiff(endAngle - startAngle);
+  
+  let diff = endAngle - startAngle; // 不再使用 normalizeAngleDiff，保留真实旋转弧度
   let anticlockwise = diff < 0;
-  context.beginPath(); context.arc(center.x, center.y, radius, startAngle, endAngle, anticlockwise); context.stroke();
+  
+  if (Math.abs(diff) < 0.01) { context.restore(); return; } // 角度太小不画
+
+  context.beginPath(); 
+  context.arc(center.x, center.y, radius, startAngle, endAngle, anticlockwise); 
+  context.stroke();
+  
+  // 绘制箭头
   const arrowLen = 12; const arrowAngle = Math.PI / 6; 
   const tangent = anticlockwise ? endAngle - Math.PI / 2 : endAngle + Math.PI / 2;
   const tipX = center.x + radius * Math.cos(endAngle);
@@ -185,6 +200,36 @@ function drawRotationArc(context, center, radius, startAngle, endAngle, color) {
   context.lineTo(tipX - arrowLen * Math.cos(tangent + arrowAngle), tipY - arrowLen * Math.sin(tangent + arrowAngle));
   context.closePath(); context.fill();
   context.restore();
+}
+
+function drawStrokes(context, strokes) {
+  strokes.forEach(stroke => {
+    if (stroke.points.length < 2) return;
+    context.save();
+    context.strokeStyle = stroke.color;
+    context.lineWidth = stroke.width;
+    context.lineCap = 'round';
+    context.lineJoin = 'round';
+    context.beginPath();
+    context.moveTo(stroke.points[0].x, stroke.points[0].y);
+    for (let i = 1; i < stroke.points.length; i++) {
+      context.lineTo(stroke.points[i].x, stroke.points[i].y);
+    }
+    context.stroke();
+    context.restore();
+  });
+}
+
+function eraseAt(strokes, x, y, radius = 15) {
+  for (let i = strokes.length - 1; i >= 0; i--) {
+    const stroke = strokes[i];
+    for (const p of stroke.points) {
+      if (Math.hypot(p.x - x, p.y - y) < radius) {
+        strokes.splice(i, 1);
+        break;
+      }
+    }
+  }
 }
 
 // ================= 任务一 (自由画线) =================
@@ -206,42 +251,32 @@ function drawActivity1() {
   a1Ctx.fillStyle = '#f8fbff'; a1Ctx.fillRect(0, 0, a1State.width, a1State.height);
   drawGrid(a1Ctx, a1State.width, a1State.height);
   
-  // 绘制原线段（如果已画新线，则变虚线）
   drawSegment(a1Ctx, a1State.A, a1State.B, a1State.drawnLine !== null);
   drawPoint(a1Ctx, a1State.A, 'A', '#94a3b8');
   drawPoint(a1Ctx, a1State.B, 'B', '#94a3b8');
 
   if (a1State.drawnLine) {
     const { start, end } = a1State.drawnLine;
-    drawSegment(a1Ctx, start, end, false); // 新线段实线
-    
-    let labelStart, labelEnd, center, basePt, currPt;
-    if (start.x === a1State.A.x && start.y === a1State.A.y) {
-      labelStart = 'A'; labelEnd = "B'"; center = a1State.A; basePt = a1State.B; currPt = end;
-    } else if (start.x === a1State.B.x && start.y === a1State.B.y) {
-      labelStart = "A'"; labelEnd = 'B'; center = a1State.B; basePt = a1State.A; currPt = end;
-    } else {
-      labelStart = "A'"; labelEnd = "B'"; center = start; basePt = a1State.A; currPt = end;
-    }
-    
-    drawPoint(a1Ctx, start, labelStart, '#e74c3c');
-    drawPoint(a1Ctx, end, labelEnd, '#e74c3c');
-    drawCenter(a1Ctx, center, '', '#27ae60');
-
-    const startAng = Math.atan2(basePt.y - center.y, basePt.x - center.x);
-    const endAng = Math.atan2(currPt.y - center.y, currPt.x - center.x);
-    drawRotationArc(a1Ctx, center, 45, startAng, endAng, '#f59e0b');
-
+    drawSegment(a1Ctx, start, end, false); 
+    drawPoint(a1Ctx, start, '', '#e74c3c');
+    drawPoint(a1Ctx, end, '', '#e74c3c');
   } else if (a1State.isDrawing && a1State.drawStart && a1State.drawEnd) {
     drawSegment(a1Ctx, a1State.drawStart, a1State.drawEnd, false);
     drawPoint(a1Ctx, a1State.drawEnd, '?', '#e74c3c');
   }
   
-  a1Canvas.style.cursor = a1State.drawnLine ? 'default' : 'crosshair';
+  drawStrokes(a1Ctx, a1State.strokes);
+  
+  if (a1State.tool === 'pen') a1Canvas.style.cursor = 'crosshair';
+  else if (a1State.tool === 'eraser') a1Canvas.style.cursor = 'cell';
+  else a1Canvas.style.cursor = a1State.drawnLine ? 'default' : 'crosshair';
 }
 
 function resetA1All() {
   a1State.isDrawing = false; a1State.drawStart = null; a1State.drawEnd = null; a1State.drawnLine = null;
+  a1State.strokes = []; a1State.tool = 'none';
+  a1PenBtn?.classList.remove('tool-active');
+  a1EraserBtn?.classList.remove('tool-active');
   drawActivity1();
 }
 
@@ -273,26 +308,49 @@ function drawActivity2() {
   a2Ctx.clearRect(0, 0, a2State.width, a2State.height);
   a2Ctx.fillStyle = '#f8fbff'; a2Ctx.fillRect(0, 0, a2State.width, a2State.height);
   drawGrid(a2Ctx, a2State.width, a2State.height);
-  const center = a2State.selectedCenterType === 'A' ? a2State.A : a2State.B;
-  const A = rotatePoint(a2State.A, center, a2State.angle);
-  const B = rotatePoint(a2State.B, center, a2State.angle);
-  drawTrail(a2Ctx, a2State.trails.A, 'rgba(231, 76, 60, 0.45)');
-  drawTrail(a2Ctx, a2State.trails.B, 'rgba(39, 174, 96, 0.45)');
-  drawSegment(a2Ctx, A, B);
-  drawPoint(a2Ctx, A, 'A', '#e74c3c');
-  drawPoint(a2Ctx, B, 'B', '#e74c3c');
-  drawCenter(a2Ctx, center, '', '#27ae60'); 
+  
+  const isCenterA = a2State.selectedCenterType === 'A';
+  const center = isCenterA ? a2State.A : a2State.B;
+  const A_rot = rotatePoint(a2State.A, center, a2State.angle);
+  const B_rot = rotatePoint(a2State.B, center, a2State.angle);
+
+  drawSegment(a2Ctx, a2State.A, a2State.B, true); // 虚线原线段
+  drawSegment(a2Ctx, A_rot, B_rot, false); // 实线旋转后线段
+
+  const hasRotated = Math.abs(a2State.angle) > 0.1; // 【修改①】判断是否发生旋转
+
+  // 【修改①】根据是否旋转显示不同的点标记
+  if (!hasRotated) {
+    drawPoint(a2Ctx, a2State.A, 'A', '#94a3b8');
+    drawPoint(a2Ctx, a2State.B, 'B', '#94a3b8');
+  } else {
+    if (isCenterA) {
+      drawCenter(a2Ctx, a2State.A, 'A', '#27ae60');
+      drawPoint(a2Ctx, a2State.B, 'B', '#94a3b8');
+      drawPoint(a2Ctx, B_rot, "B'", '#e74c3c');
+    } else {
+      drawCenter(a2Ctx, a2State.B, 'B', '#27ae60');
+      drawPoint(a2Ctx, a2State.A, 'A', '#94a3b8');
+      drawPoint(a2Ctx, A_rot, "A'", '#e74c3c');
+    }
+  }
+
+  // 【修改④】绘制 0-360° 旋转方向圆弧
+  if (hasRotated) {
+    const rotPt = isCenterA ? a2State.B : a2State.A;
+    const startAng = Math.atan2(rotPt.y - center.y, rotPt.x - center.x);
+    const endAng = startAng + a2State.angle * Math.PI / 180; // 直接使用累加角度
+    const radius = Math.hypot(rotPt.x - center.x, rotPt.y - center.y) * 0.6;
+    drawRotationArc(a2Ctx, center, radius, startAng, endAng, '#f59e0b');
+  }
+
   a2State.fixedStars.forEach(s => drawStarShape(a2Ctx, s.x, s.y, s.color));
-  if (a2TrailA) a2State.activeTrail.A = a2TrailA.checked;
-  if (a2TrailB) a2State.activeTrail.B = a2TrailB.checked;
   a2Canvas.style.cursor = 'grab';
 }
 
 function resetA2All() {
   a2State.angle = 0; a2State.selectedCenterType = 'A';
-  a2State.draggingLine = false; a2State.trails = { A: [], B: [] };
-  if (a2TrailA) a2TrailA.checked = true;
-  if (a2TrailB) a2TrailB.checked = true;
+  a2State.draggingLine = false; 
   document.querySelector('input[name="a2CenterChoice"][value="A"]').checked = true;
   drawActivity2();
 }
@@ -317,17 +375,63 @@ function draw() {
   ctx.clearRect(0, 0, state.width, state.height);
   ctx.fillStyle = '#f8fbff'; ctx.fillRect(0, 0, state.width, state.height);
   drawGrid(ctx, state.width, state.height);
+  
   const center = getCenterPoint();
-  const A = rotatePoint(state.A, center, state.angle);
-  const B = rotatePoint(state.B, center, state.angle);
+  const A_rot = rotatePoint(state.A, center, state.angle);
+  const B_rot = rotatePoint(state.B, center, state.angle);
+
   drawTrail(ctx, state.trails.A, 'rgba(231, 76, 60, 0.45)');
   drawTrail(ctx, state.trails.B, 'rgba(39, 174, 96, 0.45)');
   drawTrail(ctx, state.trails.O, 'rgba(244, 114, 182, 0.45)');
-  drawSegment(ctx, A, B);
-  drawPoint(ctx, A, 'A', '#e74c3c');
-  drawPoint(ctx, B, 'B', '#e74c3c');
-  if (state.activity3Page === 2 && state.hasO) drawCenter(ctx, state.O, 'O点', '#f472b6');
-  drawCenter(ctx, center, '', '#27ae60'); 
+
+  drawSegment(ctx, state.A, state.B, true); // 虚线原线段
+  drawSegment(ctx, A_rot, B_rot, false); // 实线旋转后线段
+
+  const hasRotated = Math.abs(state.angle) > 0.1; // 【修改②③】判断是否发生旋转
+
+  // 【修改②③】根据是否旋转及中心点显示不同的点标记
+  if (!hasRotated) {
+    drawPoint(ctx, state.A, 'A', '#94a3b8');
+    drawPoint(ctx, state.B, 'B', '#94a3b8');
+  } else {
+    if (state.selectedCenterType === 'O') {
+      drawPoint(ctx, state.A, 'A', '#94a3b8');
+      drawPoint(ctx, state.B, 'B', '#94a3b8');
+      drawPoint(ctx, A_rot, "A'", '#e74c3c');
+      drawPoint(ctx, B_rot, "B'", '#e74c3c');
+    } else if (state.selectedCenterType === 'A') {
+      drawCenter(ctx, state.A, 'A', '#27ae60');
+      drawPoint(ctx, state.B, 'B', '#94a3b8');
+      drawPoint(ctx, B_rot, "B'", '#e74c3c');
+    } else if (state.selectedCenterType === 'B') {
+      drawCenter(ctx, state.B, 'B', '#27ae60');
+      drawPoint(ctx, state.A, 'A', '#94a3b8');
+      drawPoint(ctx, A_rot, "A'", '#e74c3c');
+    }
+  }
+
+  if (state.selectedCenterType === 'O' && state.hasO) drawCenter(ctx, state.O, 'O点', '#f472b6');
+
+  // 【修改⑤】绘制 0-360° 旋转方向圆弧
+  if (hasRotated) {
+    if (state.selectedCenterType === 'O') {
+      const startAngA = Math.atan2(state.A.y - center.y, state.A.x - center.x);
+      const endAngA = startAngA + state.angle * Math.PI / 180;
+      drawRotationArc(ctx, center, Math.hypot(state.A.x - center.x, state.A.y - center.y) * 0.6, startAngA, endAngA, '#f59e0b');
+      
+      const startAngB = Math.atan2(state.B.y - center.y, state.B.x - center.x);
+      const endAngB = startAngB + state.angle * Math.PI / 180;
+      drawRotationArc(ctx, center, Math.hypot(state.B.x - center.x, state.B.y - center.y) * 0.6, startAngB, endAngB, '#3b82f6');
+    } else {
+      const isCenterA = state.selectedCenterType === 'A';
+      const rotPt = isCenterA ? state.B : state.A;
+      const startAng = Math.atan2(rotPt.y - center.y, rotPt.x - center.x);
+      const endAng = startAng + state.angle * Math.PI / 180;
+      const radius = Math.hypot(rotPt.x - center.x, rotPt.y - center.y) * 0.6;
+      drawRotationArc(ctx, center, radius, startAng, endAng, '#f59e0b');
+    }
+  }
+
   state.stars.forEach((s, i) => drawStarShape(ctx, s.x, s.y, STAR_COLORS[i % STAR_COLORS.length]));
 
   if (activity3Page2Tools) activity3Page2Tools.classList.toggle('hidden', state.activity3Page !== 2);
@@ -375,9 +479,16 @@ function startAnimation() {
     const center = getCenterPoint();
     const A = rotatePoint(state.A, center, state.angle);
     const B = rotatePoint(state.B, center, state.angle);
-    if (state.activeTrail.A) state.trails.A.push({ x: A.x, y: A.y });
-    if (state.activeTrail.B) state.trails.B.push({ x: B.x, y: B.y });
-    if (state.activeTrail.O && state.hasO) state.trails.O.push({ x: center.x, y: center.y });
+    
+    if (state.selectedCenterType === 'O') {
+      if (state.activeTrail.A) state.trails.A.push({ x: A.x, y: A.y });
+      if (state.activeTrail.B) state.trails.B.push({ x: B.x, y: B.y });
+    } else if (state.selectedCenterType === 'A') {
+      if (state.activeTrail.B) state.trails.B.push({ x: B.x, y: B.y }); 
+    } else if (state.selectedCenterType === 'B') {
+      if (state.activeTrail.A) state.trails.A.push({ x: A.x, y: A.y }); 
+    }
+
     draw();
     if (state.angle >= 360) {
       state.angle = 360; draw(); state.animating = false;
@@ -469,7 +580,6 @@ function drawActivity4() {
   a4Ctx.fillStyle = '#f8fbff'; a4Ctx.fillRect(0, 0, a4State.width, a4State.height);
   drawGrid(a4Ctx, a4State.width, a4State.height);
   
-  // 绘制原线段（如果已画新线，则变虚线）
   drawSegment(a4Ctx, a4State.M, a4State.N, a4State.drawnLine !== null);
   drawPoint(a4Ctx, a4State.M, 'M', '#94a3b8');
   drawPoint(a4Ctx, a4State.N, 'N', '#94a3b8');
@@ -478,18 +588,25 @@ function drawActivity4() {
   if (a4State.drawnLine) {
     const { start, end } = a4State.drawnLine;
     drawSegment(a4Ctx, start, end, false);
-    drawPoint(a4Ctx, start, "M'", '#e74c3c');
-    drawPoint(a4Ctx, end, "N'", '#e74c3c');
+    drawPoint(a4Ctx, start, '', '#e74c3c');
+    drawPoint(a4Ctx, end, '', '#e74c3c');
   } else if (a4State.isDrawing && a4State.drawStart && a4State.drawEnd) {
     drawSegment(a4Ctx, a4State.drawStart, a4State.drawEnd, false);
     drawPoint(a4Ctx, a4State.drawEnd, '?', '#e74c3c');
   }
   
-  a4Canvas.style.cursor = a4State.drawnLine ? 'default' : 'crosshair';
+  drawStrokes(a4Ctx, a4State.strokes);
+
+  if (a4State.tool === 'pen') a4Canvas.style.cursor = 'crosshair';
+  else if (a4State.tool === 'eraser') a4Canvas.style.cursor = 'cell';
+  else a4Canvas.style.cursor = a4State.drawnLine ? 'default' : 'crosshair';
 }
 
 function resetA4All() {
   a4State.isDrawing = false; a4State.drawStart = null; a4State.drawEnd = null; a4State.drawnLine = null;
+  a4State.strokes = []; a4State.tool = 'none';
+  a4PenBtn?.classList.remove('tool-active');
+  a4EraserBtn?.classList.remove('tool-active');
   drawActivity4();
 }
 
@@ -498,6 +615,7 @@ function setA4Page(page) {
   a4PrevBtn.classList.toggle('hidden', page === 1);
   a4NextBtn.classList.toggle('hidden', page === 2);
   setA4Msg('');
+  a4State.strokes = []; 
   resizeA4Canvas();
 }
 
@@ -534,15 +652,12 @@ document.querySelectorAll('input[name="a2CenterChoice"]').forEach(r => r.addEven
 
 trailA?.addEventListener('change', () => { state.activeTrail.A = trailA.checked; draw(); });
 trailB?.addEventListener('change', () => { state.activeTrail.B = trailB.checked; draw(); });
-a2TrailA?.addEventListener('change', () => { a2State.activeTrail.A = a2TrailA.checked; drawActivity2(); });
-a2TrailB?.addEventListener('change', () => { a2State.activeTrail.B = a2TrailB.checked; drawActivity2(); });
 
 modeStarBtn?.addEventListener('click', () => { state.mode = 'star'; setMsg(''); draw(); });
 modeLineBtn?.addEventListener('click', () => { state.mode = 'line'; setMsg(''); draw(); });
 clearTrailBtn?.addEventListener('click', () => { state.trails = { A: [], B: [], O: [] }; draw(); });
 
 a2ModeLineBtn?.addEventListener('click', () => { a2State.selectedCenterType = getA2SelectedCenterType(); drawActivity2(); });
-a2ClearTrailBtn?.addEventListener('click', () => { a2State.trails = { A: [], B: [] }; drawActivity2(); });
 a2ResetBtn?.addEventListener('click', resetA2All);
 
 a4ResetBtn?.addEventListener('click', resetA4All);
@@ -553,6 +668,32 @@ a1ResetBtn?.addEventListener('click', resetA1All);
 resetBtn?.addEventListener('click', resetAll);
 autoRunBtn?.addEventListener('click', () => startAnimation());
 addOBtn?.addEventListener('click', () => { state.awaitingOPlacement = true; state.mode = 'line'; setMsg('请点击网格点放置 O 点'); draw(); });
+
+a1PenBtn?.addEventListener('click', () => {
+  a1State.tool = a1State.tool === 'pen' ? 'none' : 'pen';
+  a1PenBtn.classList.toggle('tool-active', a1State.tool === 'pen');
+  a1EraserBtn.classList.remove('tool-active');
+  drawActivity1();
+});
+a1EraserBtn?.addEventListener('click', () => {
+  a1State.tool = a1State.tool === 'eraser' ? 'none' : 'eraser';
+  a1EraserBtn.classList.toggle('tool-active', a1State.tool === 'eraser');
+  a1PenBtn.classList.remove('tool-active');
+  drawActivity1();
+});
+
+a4PenBtn?.addEventListener('click', () => {
+  a4State.tool = a4State.tool === 'pen' ? 'none' : 'pen';
+  a4PenBtn.classList.toggle('tool-active', a4State.tool === 'pen');
+  a4EraserBtn.classList.remove('tool-active');
+  drawActivity4();
+});
+a4EraserBtn?.addEventListener('click', () => {
+  a4State.tool = a4State.tool === 'eraser' ? 'none' : 'eraser';
+  a4EraserBtn.classList.toggle('tool-active', a4State.tool === 'eraser');
+  a4PenBtn.classList.remove('tool-active');
+  drawActivity4();
+});
 
 submitBtn?.addEventListener('click', async () => {
   try {
@@ -575,24 +716,48 @@ function canvasPoint(e, canvas) {
   return { x: e.clientX - rect.left, y: e.clientY - rect.top };
 }
 
-// 任务一 交互 (自由画线)
+// 任务一 交互 
 if (a1Canvas) {
   a1Canvas.addEventListener('pointerdown', (e) => {
     e.preventDefault();
+    const p = canvasPoint(e, a1Canvas);
+    
+    if (a1State.tool === 'pen') {
+      a1State.currentStroke = { points: [p], color: '#ef4444', width: 4 };
+      a1State.strokes.push(a1State.currentStroke);
+      drawActivity1(); return;
+    }
+    if (a1State.tool === 'eraser') {
+      eraseAt(a1State.strokes, p.x, p.y);
+      drawActivity1(); return;
+    }
+
     if (a1State.drawnLine) return;
-    const p = snapPoint(canvasPoint(e, a1Canvas));
+    const snapP = snapPoint(p);
     a1State.isDrawing = true;
-    a1State.drawStart = p;
-    a1State.drawEnd = p;
+    a1State.drawStart = snapP;
+    a1State.drawEnd = snapP;
     drawActivity1();
   });
   a1Canvas.addEventListener('pointermove', (e) => {
     e.preventDefault();
+    const p = canvasPoint(e, a1Canvas);
+    
+    if (a1State.tool === 'pen' && a1State.currentStroke) {
+      a1State.currentStroke.points.push(p);
+      drawActivity1(); return;
+    }
+    if (a1State.tool === 'eraser' && e.buttons === 1) {
+      eraseAt(a1State.strokes, p.x, p.y);
+      drawActivity1(); return;
+    }
+
     if (!a1State.isDrawing) return;
-    a1State.drawEnd = snapPoint(canvasPoint(e, a1Canvas));
+    a1State.drawEnd = snapPoint(p);
     drawActivity1();
   });
   a1Canvas.addEventListener('pointerup', (e) => {
+    a1State.currentStroke = null;
     if (!a1State.isDrawing) return;
     a1State.isDrawing = false;
     const end = snapPoint(canvasPoint(e, a1Canvas));
@@ -602,7 +767,10 @@ if (a1Canvas) {
     a1State.drawStart = null; a1State.drawEnd = null;
     drawActivity1();
   });
-  a1Canvas.addEventListener('pointerleave', () => { if(a1State.isDrawing) { a1State.isDrawing = false; drawActivity1(); } });
+  a1Canvas.addEventListener('pointerleave', () => { 
+    a1State.currentStroke = null;
+    if(a1State.isDrawing) { a1State.isDrawing = false; drawActivity1(); } 
+  });
 }
 
 // 任务二 交互
@@ -615,8 +783,8 @@ if (a2Canvas) {
     const B = rotatePoint(a2State.B, center, a2State.angle);
     if (Math.hypot(A.x - p.x, A.y - p.y) < 35 || Math.hypot(B.x - p.x, B.y - p.y) < 35) {
       a2State.draggingLine = true;
-      a2State.dragStartAngle = Math.atan2(p.y - center.y, p.x - center.x);
-      a2State.dragStartObjAngle = a2State.angle;
+      // 【修改④】记录初始鼠标角度
+      a2State.lastMouseAngle = Math.atan2(p.y - center.y, p.x - center.x);
     }
   });
   a2Canvas.addEventListener('pointermove', (e) => {
@@ -625,36 +793,60 @@ if (a2Canvas) {
     const p = canvasPoint(e, a2Canvas);
     const center = a2State.selectedCenterType === 'A' ? a2State.A : a2State.B;
     const currentMouseAngle = Math.atan2(p.y - center.y, p.x - center.x);
-    let delta = normalizeAngleDiff(currentMouseAngle - a2State.dragStartAngle);
-    a2State.angle = a2State.dragStartObjAngle + delta * 180 / Math.PI; 
-    const A = rotatePoint(a2State.A, center, a2State.angle);
-    const B = rotatePoint(a2State.B, center, a2State.angle);
-    if (a2State.activeTrail.A) a2State.trails.A.push({ x: A.x, y: A.y });
-    if (a2State.activeTrail.B) a2State.trails.B.push({ x: B.x, y: B.y });
+    
+    // 【修改④】计算与上一帧的角度差并累加，避免跨越180°时的跳变
+    let delta = normalizeAngleDiff(currentMouseAngle - a2State.lastMouseAngle);
+    a2State.angle += delta * 180 / Math.PI; 
+    a2State.lastMouseAngle = currentMouseAngle;
+    
     drawActivity2();
   });
   a2Canvas.addEventListener('pointerup', () => { a2State.draggingLine = false; });
   a2Canvas.addEventListener('pointerleave', () => { a2State.draggingLine = false; });
 }
 
-// 综合练习 交互 (自由画线)
+// 综合练习 交互 
 if (a4Canvas) {
   a4Canvas.addEventListener('pointerdown', (e) => {
     e.preventDefault();
+    const p = canvasPoint(e, a4Canvas);
+    
+    if (a4State.tool === 'pen') {
+      a4State.currentStroke = { points: [p], color: '#ef4444', width: 4 };
+      a4State.strokes.push(a4State.currentStroke);
+      drawActivity4(); return;
+    }
+    if (a4State.tool === 'eraser') {
+      eraseAt(a4State.strokes, p.x, p.y);
+      drawActivity4(); return;
+    }
+
     if (a4State.drawnLine) return;
-    const p = snapPoint(canvasPoint(e, a4Canvas));
+    const snapP = snapPoint(p);
     a4State.isDrawing = true;
-    a4State.drawStart = p;
-    a4State.drawEnd = p;
+    a4State.drawStart = snapP;
+    a4State.drawEnd = snapP;
     drawActivity4();
   });
   a4Canvas.addEventListener('pointermove', (e) => {
     e.preventDefault();
+    const p = canvasPoint(e, a4Canvas);
+    
+    if (a4State.tool === 'pen' && a4State.currentStroke) {
+      a4State.currentStroke.points.push(p);
+      drawActivity4(); return;
+    }
+    if (a4State.tool === 'eraser' && e.buttons === 1) {
+      eraseAt(a4State.strokes, p.x, p.y);
+      drawActivity4(); return;
+    }
+
     if (!a4State.isDrawing) return;
-    a4State.drawEnd = snapPoint(canvasPoint(e, a4Canvas));
+    a4State.drawEnd = snapPoint(p);
     drawActivity4();
   });
   a4Canvas.addEventListener('pointerup', (e) => {
+    a4State.currentStroke = null;
     if (!a4State.isDrawing) return;
     a4State.isDrawing = false;
     const end = snapPoint(canvasPoint(e, a4Canvas));
@@ -664,7 +856,10 @@ if (a4Canvas) {
     a4State.drawStart = null; a4State.drawEnd = null;
     drawActivity4();
   });
-  a4Canvas.addEventListener('pointerleave', () => { if(a4State.isDrawing) { a4State.isDrawing = false; drawActivity4(); } });
+  a4Canvas.addEventListener('pointerleave', () => { 
+    a4State.currentStroke = null;
+    if(a4State.isDrawing) { a4State.isDrawing = false; drawActivity4(); } 
+  });
 }
 
 // 任务三 交互 
@@ -700,8 +895,8 @@ starCanvas?.addEventListener('pointerdown', (e) => {
     }
     if (Math.hypot(A.x - p.x, A.y - p.y) < 35 || Math.hypot(B.x - p.x, B.y - p.y) < 35) {
       state.draggingLine = true;
-      state.dragStartAngle = Math.atan2(p.y - center.y, p.x - center.x);
-      state.dragStartObjAngle = state.angle;
+      // 【修改⑤】记录初始鼠标角度
+      state.lastMouseAngle = Math.atan2(p.y - center.y, p.x - center.x);
     }
   }
 });
@@ -720,12 +915,22 @@ starCanvas?.addEventListener('pointermove', (e) => {
   if (state.mode === 'line' && state.draggingLine) {
     const fixedCenter = getCenterPoint();
     const currentMouseAngle = Math.atan2(p.y - fixedCenter.y, p.x - fixedCenter.x);
-    let delta = normalizeAngleDiff(currentMouseAngle - state.dragStartAngle);
-    state.angle = state.dragStartObjAngle + delta * 180 / Math.PI; 
+    
+    // 【修改⑤】计算与上一帧的角度差并累加
+    let delta = normalizeAngleDiff(currentMouseAngle - state.lastMouseAngle);
+    state.angle += delta * 180 / Math.PI; 
+    state.lastMouseAngle = currentMouseAngle;
+    
     const A = rotatePoint(state.A, fixedCenter, state.angle);
     const B = rotatePoint(state.B, fixedCenter, state.angle);
-    if (state.activeTrail.A) state.trails.A.push({ x: A.x, y: A.y });
-    if (state.activeTrail.B) state.trails.B.push({ x: B.x, y: B.y });
+    if (state.selectedCenterType === 'O') {
+      if (state.activeTrail.A) state.trails.A.push({ x: A.x, y: A.y });
+      if (state.activeTrail.B) state.trails.B.push({ x: B.x, y: B.y });
+    } else if (state.selectedCenterType === 'A') {
+      if (state.activeTrail.B) state.trails.B.push({ x: B.x, y: B.y });
+    } else if (state.selectedCenterType === 'B') {
+      if (state.activeTrail.A) state.trails.A.push({ x: A.x, y: A.y });
+    }
     draw();
   }
 });
