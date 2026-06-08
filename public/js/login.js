@@ -19,8 +19,9 @@ function renderUserOptions() {
     option.textContent = 'teacher';
     usernameSelect.appendChild(option);
   } else if (role === 'student') {
-    const numMap = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '十一', '十二', '十三', '十四', '十五', '十六', '十七', '十八', '十九', '二十'];
-    for (let i = 1; i <= 20; i++) {
+    // 【修改①】只保留第一到第十小组
+    const numMap = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
+    for (let i = 1; i <= 10; i++) {
       const option = document.createElement('option');
       const name = `第${numMap[i-1]}小组`;
       option.value = name;
