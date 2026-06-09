@@ -29,13 +29,7 @@
     .activity2-step-box p { margin: 0; line-height: 1.8; color: #334155; font-size: 14px; }
     .activity2-grid-wrap { margin-top: 12px; padding: 12px; border-radius: 14px; background: #f8fbff; border: 1px solid #dce8ef; }
     .activity2-grid-canvas { width: 100%; height: 420px; display: block; border-radius: 12px; background: #fff; border: 1px solid #dce8ef; touch-action: none; user-select: none; -webkit-user-select: none; }
-    
-    /* 画笔工具激活状态 */
-    .btn.tool-active {
-      background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%) !important;
-      box-shadow: 0 4px 0 #1d4ed8 !important;
-      transform: translateY(2px);
-    }
+    .btn.tool-active { background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%) !important; box-shadow: 0 4px 0 #1d4ed8 !important; transform: translateY(2px); }
   </style>
 </head>
 <body class="theme-bg">
@@ -45,7 +39,6 @@
       <p id="welcome"></p>
       <button id="logoutBtn" class="btn small" style="margin-top:10px;">退出登录</button>
     </div>
-
     <div class="card">
       <div class="tabs">
         <button class="tab-btn active" data-activity="1">任务一</button>
@@ -53,34 +46,22 @@
         <button class="tab-btn" data-activity="3">任务三</button>
         <button class="tab-btn" data-activity="4">综合练习</button>
       </div>
-
-      <!-- 任务一 -->
       <div id="activity1Panel" class="activity-panel">
         <div class="activity-heading">任务要求：画出旋转后的线段AB。</div>
-        <div class="activity2-grid-wrap">
-          <canvas id="activity1Canvas" class="activity2-grid-canvas"></canvas>
-        </div>
+        <div class="activity2-grid-wrap"><canvas id="activity1Canvas" class="activity2-grid-canvas"></canvas></div>
         <div class="star-tools" style="margin-top:12px;">
           <button id="a1PenBtn" class="btn">画笔</button>
           <button id="a1EraserBtn" class="btn">橡皮擦</button>
           <button id="a1ResetBtn" class="btn">重置画布</button>
         </div>
-        <div class="button-row" style="margin-top: 16px;">
-          <button id="submitBtn" class="btn primary">提交作品</button>
-        </div>
+        <div class="button-row" style="margin-top: 16px;"><button id="submitBtn" class="btn primary">提交作品</button></div>
       </div>
-
-      <!-- 任务二 -->
       <div id="activity2Panel" class="activity-panel hidden">
         <div class="task-card large-task-card">
-          <div class="activity-heading" style="margin-bottom: 15px;">
-            任务要求：1.旋转线段AB点亮3颗星星。2.和同桌说一说如何旋转。
-          </div>
+          <div class="activity-heading" style="margin-bottom: 15px;">任务要求：1.旋转线段AB点亮3颗星星。2.和同桌说一说如何旋转。</div>
           <div class="activity2-step-box">
             <h3>旋转线段AB</h3>
-            <div class="activity2-grid-wrap">
-              <canvas id="activity2Canvas" class="activity2-grid-canvas"></canvas>
-            </div>
+            <div class="activity2-grid-wrap"><canvas id="activity2Canvas" class="activity2-grid-canvas"></canvas></div>
             <div class="star-tools" style="margin-top:12px;">
               <button id="a2ModeLineBtn" class="btn">操纵线段AB</button>
               <button id="a2ResetBtn" class="btn">重置</button>
@@ -92,15 +73,11 @@
           </div>
         </div>
       </div>
-
-      <!-- 任务三 -->
       <div id="activity3Panel" class="activity-panel hidden">
         <div class="task-card large-task-card">
           <div class="star-tool-wrap">
             <div class="activity3-page-header">
-              <div class="activity-heading" style="margin-bottom:0; flex: 1 1 auto;" id="activity3Title">
-                任务要求：想一想5颗星星还能放在哪些位置通过旋转一次线段AB都能点亮？
-              </div>
+              <div class="activity-heading" style="margin-bottom:0; flex: 1 1 auto;" id="activity3Title">任务要求：想一想5颗星星还能放在哪些位置通过旋转一次线段AB都能点亮？</div>
             </div>
             <div class="star-tools">
               <button id="modeStarBtn" class="btn primary">放置/拖动星星</button>
@@ -118,13 +95,10 @@
               <label id="oCenterWrap" class="hidden"><input type="radio" name="centerChoice" value="O"> 以O点为旋转中心</label>
             </div>
             <div class="star-tools">
-              <!-- 【修改④】修改轨迹文案 -->
               <label><input type="checkbox" id="trailA"> A'点轨迹</label>
               <label><input type="checkbox" id="trailB"> B'点轨迹</label>
             </div>
-            <div class="star-board">
-              <canvas id="starCanvas" class="star-canvas"></canvas>
-            </div>
+            <div class="star-board"><canvas id="starCanvas" class="star-canvas"></canvas></div>
             <div class="button-row" style="justify-content: space-between; align-items: center;">
               <button id="submitStarBtn" class="btn primary">提交</button>
               <div class="activity3-nav-bottom">
@@ -136,14 +110,10 @@
           </div>
         </div>
       </div>
-
-      <!-- 综合练习 -->
       <div id="activity4Panel" class="activity-panel hidden">
         <div class="task-card large-task-card">
-          <div class="activity-heading" id="a4TaskText">任务要求：画出线段MN绕点P顺时针旋转90°后的图形。</div>
-          <div class="activity2-grid-wrap">
-            <canvas id="activity4Canvas" class="activity2-grid-canvas"></canvas>
-          </div>
+          <div class="activity-heading" id="a4TaskText">任务要求：画出线段MN绕点P顺时针方向旋转90°后的图形。</div>
+          <div class="activity2-grid-wrap"><canvas id="activity4Canvas" class="activity2-grid-canvas"></canvas></div>
           <div class="star-tools" style="margin-top:12px;">
             <button id="a4PenBtn" class="btn">画笔</button>
             <button id="a4EraserBtn" class="btn">橡皮擦</button>
@@ -159,7 +129,6 @@
           <div id="a4Msg" class="msg" style="text-align: center; margin-top: 10px;"></div>
         </div>
       </div>
-
       <div id="msg" class="msg"></div>
     </div>
   </div>
