@@ -1,7 +1,6 @@
 const token = localStorage.getItem('teacherToken');
 const role = localStorage.getItem('role');
 const username = localStorage.getItem('username');
-
 const welcomeEl = document.getElementById('welcome');
 const refreshBtn = document.getElementById('refreshBtn');
 const clearBtn = document.getElementById('clearBtn');
@@ -12,19 +11,20 @@ const tabBtns = document.querySelectorAll('.tab-btn');
 const submissionBox = document.getElementById('submissionBox');
 const submissionWrapper = document.getElementById('submissionWrapper'); 
 const toggleA3CanvasBtn = document.getElementById('toggleA3CanvasBtn');
-
+const toggleA4CanvasBtn = document.getElementById('toggleA4CanvasBtn');
 const tA2Panel = document.getElementById('teacherActivity2Panel');
 const tA2Canvas = document.getElementById('teacherA2Canvas');
 const tA2Ctx = tA2Canvas ? tA2Canvas.getContext('2d') : null;
-
 const tA3Panel = document.getElementById('teacherActivity3Panel');
 const tA3Canvas = document.getElementById('teacherA3Canvas');
 const tA3Ctx = tA3Canvas ? tA3Canvas.getContext('2d') : null;
 const tA3Msg = document.getElementById('tA3Msg');
-
+const tA4Panel = document.getElementById('teacherActivity4Panel');
+const tA4Canvas = document.getElementById('teacherA4Canvas');
+const tA4Ctx = tA4Canvas ? tA4Canvas.getContext('2d') : null;
+const tA4TaskText = document.getElementById('tA4TaskText');
 if (!token || role !== 'teacher') location.href = '/login.html';
 
-// ===================== 高级 Lightbox (批注与缩放) =====================
 const lightboxOverlay = document.getElementById('lightbox-overlay');
 const lbContent = document.getElementById('lb-content');
 const lbImg = document.getElementById('lb-img');
@@ -34,436 +34,141 @@ const lbPen = document.getElementById('lb-pen');
 const lbEraser = document.getElementById('lb-eraser');
 const lbClear = document.getElementById('lb-clear');
 const lbClose = document.getElementById('lb-close');
-
-const lbState = {
-  scale: 1, translateX: 0, translateY: 0,
-  isPanning: false, startX: 0, startY: 0,
-  mode: 'none', isDrawing: false,
-  initialPinchDistance: 0, initialScale: 1
-};
+const lbState = { scale: 1, translateX: 0, translateY: 0, isPanning: false, startX: 0, startY: 0, mode: 'none', isDrawing: false, initialPinchDistance: 0, initialScale: 1 };
 
 function initLightbox() {
   function resizeCanvas() { lbCanvas.width = window.innerWidth; lbCanvas.height = window.innerHeight; }
-  resizeCanvas();
-  window.addEventListener('resize', resizeCanvas);
-
+  resizeCanvas(); window.addEventListener('resize', resizeCanvas);
   lbPen.addEventListener('click', () => setLbMode(lbState.mode === 'pen' ? 'none' : 'pen'));
   lbEraser.addEventListener('click', () => setLbMode(lbState.mode === 'eraser' ? 'none' : 'eraser'));
   lbClear.addEventListener('click', () => lbCtx.clearRect(0, 0, lbCanvas.width, lbCanvas.height));
   lbClose.addEventListener('click', closeLightbox);
-
-  lbContent.addEventListener('wheel', (e) => {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    lbState.scale = Math.min(Math.max(lbState.scale * delta, 0.5), 5);
-    applyLbTransform();
-  }, { passive: false });
-
-  lbContent.addEventListener('touchstart', (e) => {
-    if (e.touches.length === 2) {
-      lbState.initialPinchDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-      lbState.initialScale = lbState.scale;
-    } else if (e.touches.length === 1 && lbState.mode === 'none') {
-      lbState.isPanning = true;
-      lbState.startX = e.touches[0].clientX - lbState.translateX;
-      lbState.startY = e.touches[0].clientY - lbState.translateY;
-    }
-  }, { passive: false });
-
-  lbContent.addEventListener('touchmove', (e) => {
-    e.preventDefault();
-    if (e.touches.length === 2) {
-      const currentDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-      lbState.scale = Math.min(Math.max(lbState.initialScale * (currentDistance / lbState.initialPinchDistance), 0.5), 5);
-      applyLbTransform();
-    } else if (e.touches.length === 1 && lbState.isPanning) {
-      lbState.translateX = e.touches[0].clientX - lbState.startX;
-      lbState.translateY = e.touches[0].clientY - lbState.startY;
-      applyLbTransform();
-    }
-  }, { passive: false });
-
+  lbContent.addEventListener('wheel', (e) => { e.preventDefault(); const delta = e.deltaY > 0 ? 0.9 : 1.1; lbState.scale = Math.min(Math.max(lbState.scale * delta, 0.5), 5); applyLbTransform(); }, { passive: false });
+  lbContent.addEventListener('touchstart', (e) => { if (e.touches.length === 2) { lbState.initialPinchDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); lbState.initialScale = lbState.scale; } else if (e.touches.length === 1 && lbState.mode === 'none') { lbState.isPanning = true; lbState.startX = e.touches[0].clientX - lbState.translateX; lbState.startY = e.touches[0].clientY - lbState.translateY; } }, { passive: false });
+  lbContent.addEventListener('touchmove', (e) => { e.preventDefault(); if (e.touches.length === 2) { const currentDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); lbState.scale = Math.min(Math.max(lbState.initialScale * (currentDistance / lbState.initialPinchDistance), 0.5), 5); applyLbTransform(); } else if (e.touches.length === 1 && lbState.isPanning) { lbState.translateX = e.touches[0].clientX - lbState.startX; lbState.translateY = e.touches[0].clientY - lbState.startY; applyLbTransform(); } }, { passive: false });
   lbContent.addEventListener('touchend', () => { lbState.isPanning = false; });
-
-  lbContent.addEventListener('pointerdown', (e) => {
-    if (lbState.mode === 'none') {
-      lbState.isPanning = true;
-      lbState.startX = e.clientX - lbState.translateX;
-      lbState.startY = e.clientY - lbState.translateY;
-    }
-  });
-  window.addEventListener('pointermove', (e) => {
-    if (lbState.isPanning) {
-      lbState.translateX = e.clientX - lbState.startX;
-      lbState.translateY = e.clientY - lbState.startY;
-      applyLbTransform();
-    }
-  });
+  lbContent.addEventListener('pointerdown', (e) => { if (lbState.mode === 'none') { lbState.isPanning = true; lbState.startX = e.clientX - lbState.translateX; lbState.startY = e.clientY - lbState.translateY; } });
+  window.addEventListener('pointermove', (e) => { if (lbState.isPanning) { lbState.translateX = e.clientX - lbState.startX; lbState.translateY = e.clientY - lbState.startY; applyLbTransform(); } });
   window.addEventListener('pointerup', () => { lbState.isPanning = false; });
-
-  lbCanvas.addEventListener('pointerdown', (e) => {
-    if (lbState.mode === 'pen' || lbState.mode === 'eraser') {
-      lbState.isDrawing = true;
-      lbCtx.beginPath();
-      lbCtx.moveTo(e.clientX, e.clientY);
-    }
-  });
-  lbCanvas.addEventListener('pointermove', (e) => {
-    if (lbState.isDrawing) {
-      lbCtx.lineTo(e.clientX, e.clientY);
-      lbCtx.stroke();
-    }
-  });
+  lbCanvas.addEventListener('pointerdown', (e) => { if (lbState.mode === 'pen' || lbState.mode === 'eraser') { lbState.isDrawing = true; lbCtx.beginPath(); lbCtx.moveTo(e.clientX, e.clientY); } });
+  lbCanvas.addEventListener('pointermove', (e) => { if (lbState.isDrawing) { lbCtx.lineTo(e.clientX, e.clientY); lbCtx.stroke(); } });
   lbCanvas.addEventListener('pointerup', () => { lbState.isDrawing = false; });
   lbCanvas.addEventListener('pointerleave', () => { lbState.isDrawing = false; });
 }
-
-function setLbMode(mode) {
-  lbState.mode = mode;
-  lbPen.classList.toggle('active', mode === 'pen');
-  lbEraser.classList.toggle('active', mode === 'eraser');
-  if (mode === 'pen') {
-    lbCanvas.style.pointerEvents = 'auto'; lbContent.style.cursor = 'crosshair';
-    lbCtx.globalCompositeOperation = 'source-over'; lbCtx.strokeStyle = '#ef4444'; lbCtx.lineWidth = 4; lbCtx.lineCap = 'round';
-  } else if (mode === 'eraser') {
-    lbCanvas.style.pointerEvents = 'auto'; lbContent.style.cursor = 'cell';
-    lbCtx.globalCompositeOperation = 'destination-out'; lbCtx.lineWidth = 20;
-  } else {
-    lbCanvas.style.pointerEvents = 'none'; lbContent.style.cursor = 'grab';
-  }
-}
-
-function applyLbTransform() {
-  lbContent.style.transform = `translate(${lbState.translateX}px, ${lbState.translateY}px) scale(${lbState.scale})`;
-}
-
-window.openLightbox = function(src) {
-  lbImg.src = src;
-  lightboxOverlay.classList.add('active');
-  lbState.scale = 1; lbState.translateX = 0; lbState.translateY = 0;
-  applyLbTransform();
-  lbCtx.clearRect(0, 0, lbCanvas.width, lbCanvas.height);
-  setLbMode('none'); 
-};
-
+function setLbMode(mode) { lbState.mode = mode; lbPen.classList.toggle('active', mode === 'pen'); lbEraser.classList.toggle('active', mode === 'eraser'); if (mode === 'pen') { lbCanvas.style.pointerEvents = 'auto'; lbContent.style.cursor = 'crosshair'; lbCtx.globalCompositeOperation = 'source-over'; lbCtx.strokeStyle = '#ef4444'; lbCtx.lineWidth = 4; lbCtx.lineCap = 'round'; } else if (mode === 'eraser') { lbCanvas.style.pointerEvents = 'auto'; lbContent.style.cursor = 'cell'; lbCtx.globalCompositeOperation = 'destination-out'; lbCtx.lineWidth = 20; } else { lbCanvas.style.pointerEvents = 'none'; lbContent.style.cursor = 'grab'; } }
+function applyLbTransform() { lbContent.style.transform = `translate(${lbState.translateX}px, ${lbState.translateY}px) scale(${lbState.scale})`; }
+window.openLightbox = function(src) { lbImg.src = src; lightboxOverlay.classList.add('active'); lbState.scale = 1; lbState.translateX = 0; lbState.translateY = 0; applyLbTransform(); lbCtx.clearRect(0, 0, lbCanvas.width, lbCanvas.height); setLbMode('none'); };
 function closeLightbox() { lightboxOverlay.classList.remove('active'); }
 initLightbox();
 
-// ===================== 基础初始化 =====================
 let currentActivity = Number(localStorage.getItem('teacherCurrentActivity')) || 1;
 let pollInterval = null; 
 const activityMap = { 1: '任务一', 2: '任务二', 3: '任务三', 4: '综合练习' };
 if(welcomeEl) welcomeEl.textContent = `当前账号：${username}`;
 
-// ===================== 任务二：星星提示交互 =====================
-document.querySelectorAll('.star-hint-item').forEach(item => {
-  item.addEventListener('click', () => {
-    const starIcon = item.querySelector('.star-icon');
-    const hintEl = item.querySelector('.star-hint-text');
-    const isShowing = hintEl.classList.contains('show');
-    if (isShowing) { hintEl.classList.remove('show'); starIcon.classList.remove('active'); } 
-    else { hintEl.classList.add('show'); starIcon.classList.add('active'); }
-  });
-});
+document.querySelectorAll('.star-hint-item').forEach(item => { item.addEventListener('click', () => { const starIcon = item.querySelector('.star-icon'); const hintEl = item.querySelector('.star-hint-text'); const isShowing = hintEl.classList.contains('show'); if (isShowing) { hintEl.classList.remove('show'); starIcon.classList.remove('active'); } else { hintEl.classList.add('show'); starIcon.classList.add('active'); } }); });
 
-// ===================== 任务三：学生画布切换 =====================
 toggleA3CanvasBtn?.addEventListener('click', () => {
   const isShowingCanvas = tA3Panel.style.display === 'block';
-  if (isShowingCanvas) {
-    // 切换回查看作品模式
-    tA3Panel.style.display = 'none'; 
-    submissionWrapper.style.display = 'block'; 
-    if(worksEl) worksEl.style.display = 'block';
-    if(refreshBtn) refreshBtn.style.display = 'inline-block';
-    if(clearBtn) clearBtn.style.display = 'inline-block';
-    toggleA3CanvasBtn.textContent = '学生画布';
-  } else {
-    // 切换到学生画布模式
-    tA3Panel.style.display = 'block'; 
-    submissionWrapper.style.display = 'none'; 
-    if(worksEl) worksEl.style.display = 'none';
-    if(refreshBtn) refreshBtn.style.display = 'none';
-    if(clearBtn) clearBtn.style.display = 'none';
-    toggleA3CanvasBtn.textContent = '查看作品'; 
-    setTimeout(resizeTeacherA3Canvas, 50);
-  }
+  if (isShowingCanvas) { tA3Panel.style.display = 'none'; submissionWrapper.style.display = 'block'; if(worksEl) worksEl.style.display = 'block'; if(refreshBtn) refreshBtn.style.display = 'inline-block'; if(clearBtn) clearBtn.style.display = 'inline-block'; toggleA3CanvasBtn.textContent = '学生画布'; } 
+  else { tA3Panel.style.display = 'block'; submissionWrapper.style.display = 'none'; if(worksEl) worksEl.style.display = 'none'; if(refreshBtn) refreshBtn.style.display = 'none'; if(clearBtn) clearBtn.style.display = 'none'; toggleA3CanvasBtn.textContent = '查看作品'; setTimeout(resizeTeacherA3Canvas, 50); }
 });
 
-// ===================== 通用绘图函数 =====================
+toggleA4CanvasBtn?.addEventListener('click', () => {
+  const isShowingCanvas = tA4Panel.style.display === 'block';
+  if (isShowingCanvas) { tA4Panel.style.display = 'none'; if(worksEl) worksEl.style.display = 'block'; if(refreshBtn) refreshBtn.style.display = 'inline-block'; if(clearBtn) clearBtn.style.display = 'inline-block'; toggleA4CanvasBtn.textContent = '学生画布'; } 
+  else { tA4Panel.style.display = 'block'; if(worksEl) worksEl.style.display = 'none'; if(refreshBtn) refreshBtn.style.display = 'none'; if(clearBtn) clearBtn.style.display = 'none'; toggleA4CanvasBtn.textContent = '查看作品'; setTimeout(resizeTeacherA4Canvas, 50); }
+});
+
 const GRID = 40;
 const STAR_COLORS = ['#ff5d8f', '#7c5cff', '#4cc9f0', '#f9c74f', '#43aa8b'];
-
 function normalizeAngleDiff(diff) { while (diff > Math.PI) diff -= 2 * Math.PI; while (diff < -Math.PI) diff += 2 * Math.PI; return diff; }
 function rotatePoint(p, c, angleDeg) { const rad = angleDeg * Math.PI / 180; const cos = Math.cos(rad); const sin = Math.sin(rad); const dx = p.x - c.x; const dy = p.y - c.y; return { x: c.x + dx * cos - dy * sin, y: c.y + dx * sin + dy * cos }; }
 function drawGrid(ctx, w, h) { ctx.save(); ctx.strokeStyle = '#dbe7f3'; ctx.lineWidth = 1; for (let x = 0; x <= w; x += GRID) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); } for (let y = 0; y <= h; y += GRID) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); } ctx.restore(); }
 function drawStarShape(ctx, x, y, color) { const spikes = 5, outerRadius = 12, innerRadius = 5; let rot = Math.PI / 2 * 3; const step = Math.PI / spikes; ctx.save(); ctx.translate(x, y); ctx.beginPath(); ctx.moveTo(0, -outerRadius); for (let i = 0; i < spikes; i++) { ctx.lineTo(Math.cos(rot) * outerRadius, Math.sin(rot) * outerRadius); rot += step; ctx.lineTo(Math.cos(rot) * innerRadius, Math.sin(rot) * innerRadius); rot += step; } ctx.closePath(); ctx.fillStyle = color; ctx.shadowColor = 'rgba(0,0,0,0.12)'; ctx.shadowBlur = 6; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.stroke(); ctx.restore(); }
 function drawPoint(ctx, p, label, color) { ctx.save(); ctx.fillStyle = color; ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(p.x, p.y, 7, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); if(label) { ctx.fillStyle = '#1f2d3d'; ctx.font = 'bold 16px sans-serif'; ctx.fillText(label, p.x + 10, p.y - 10); } ctx.restore(); }
 function drawCenter(ctx, c, label = '', color = '#27ae60') { ctx.save(); ctx.fillStyle = color; ctx.beginPath(); ctx.arc(c.x, c.y, 7, 0, Math.PI * 2); ctx.fill(); if (label) { ctx.fillStyle = color; ctx.font = 'bold 15px sans-serif'; ctx.fillText(label, c.x + 10, c.y + 5); } ctx.restore(); }
-
-// 支持虚线
-function drawSegment(ctx, A, B, isDashed = false) { 
-  ctx.save(); 
-  ctx.strokeStyle = isDashed ? '#94a3b8' : '#2d6cdf'; 
-  ctx.lineWidth = 4; ctx.lineCap = 'round';
-  if (isDashed) ctx.setLineDash([8, 8]);
-  ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.stroke(); 
-  ctx.setLineDash([]);
-  ctx.restore(); 
-}
-
+function drawSegment(ctx, A, B, isDashed = false) { ctx.save(); ctx.strokeStyle = isDashed ? '#94a3b8' : '#2d6cdf'; ctx.lineWidth = 4; ctx.lineCap = 'round'; if (isDashed) ctx.setLineDash([8, 8]); ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.stroke(); ctx.setLineDash([]); ctx.restore(); }
 function drawTrail(ctx, points, color) { if (!points || points.length < 2) return; ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.beginPath(); points.forEach((p, i) => { if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); }); ctx.stroke(); ctx.restore(); }
 function snapToGrid(v) { return Math.round(v / GRID) * GRID; }
 function snapPoint(p) { return { x: snapToGrid(p.x), y: snapToGrid(p.y) }; }
+function drawStrokes(context, strokes) { strokes.forEach(stroke => { if (stroke.points.length < 2) return; context.save(); context.strokeStyle = stroke.color; context.lineWidth = stroke.width; context.lineCap = 'round'; context.lineJoin = 'round'; context.beginPath(); context.moveTo(stroke.points[0].x, stroke.points[0].y); for (let i = 1; i < stroke.points.length; i++) { context.lineTo(stroke.points[i].x, stroke.points[i].y); } context.stroke(); context.restore(); }); }
+function eraseAt(strokes, x, y, radius = 15) { for (let i = strokes.length - 1; i >= 0; i--) { const stroke = strokes[i]; for (const p of stroke.points) { if (Math.hypot(p.x - x, p.y - y) < radius) { strokes.splice(i, 1); break; } } } }
+function drawRotationArc(context, center, radius, startAngle, endAngle, color) { context.save(); context.strokeStyle = color; context.fillStyle = color; context.lineWidth = 2.5; context.setLineDash([]); let diff = endAngle - startAngle; let anticlockwise = diff < 0; if (Math.abs(diff) < 0.01) { context.restore(); return; } context.beginPath(); context.arc(center.x, center.y, radius, startAngle, endAngle, anticlockwise); context.stroke(); const arrowLen = 12; const arrowAngle = Math.PI / 6; const tangent = anticlockwise ? endAngle - Math.PI / 2 : endAngle + Math.PI / 2; const tipX = center.x + radius * Math.cos(endAngle); const tipY = center.y + radius * Math.sin(endAngle); context.beginPath(); context.moveTo(tipX, tipY); context.lineTo(tipX - arrowLen * Math.cos(tangent - arrowAngle), tipY - arrowLen * Math.sin(tangent - arrowAngle)); context.lineTo(tipX - arrowLen * Math.cos(tangent + arrowAngle), tipY - arrowLen * Math.sin(tangent + arrowAngle)); context.closePath(); context.fill(); context.restore(); }
 
-// 0-360度连续旋转圆弧
-function drawRotationArc(context, center, radius, startAngle, endAngle, color) {
-  context.save();
-  context.strokeStyle = color; context.fillStyle = color; context.lineWidth = 2.5; context.setLineDash([]);
-  let diff = endAngle - startAngle; 
-  let anticlockwise = diff < 0;
-  if (Math.abs(diff) < 0.01) { context.restore(); return; }
-  context.beginPath(); context.arc(center.x, center.y, radius, startAngle, endAngle, anticlockwise); context.stroke();
-  const arrowLen = 12; const arrowAngle = Math.PI / 6; 
-  const tangent = anticlockwise ? endAngle - Math.PI / 2 : endAngle + Math.PI / 2;
-  const tipX = center.x + radius * Math.cos(endAngle);
-  const tipY = center.y + radius * Math.sin(endAngle);
-  context.beginPath(); context.moveTo(tipX, tipY);
-  context.lineTo(tipX - arrowLen * Math.cos(tangent - arrowAngle), tipY - arrowLen * Math.sin(tangent - arrowAngle));
-  context.lineTo(tipX - arrowLen * Math.cos(tangent + arrowAngle), tipY - arrowLen * Math.sin(tangent + arrowAngle));
-  context.closePath(); context.fill();
-  context.restore();
-}
-
-// ===================== 任务二 画布逻辑 =====================
 const tA2State = { width: 0, height: 0, A: null, B: null, selectedCenterType: 'A', angle: 0, draggingLine: false, lastMouseAngle: 0, fixedStars: [], trails: { A: [], B: [] }, activeTrail: { A: true, B: true }, animating: false, rafId: null };
-
 function initTeacherA2FixedStars() { if (!tA2State.A || !tA2State.B) return; tA2State.fixedStars = [ { x: tA2State.A.x + 3 * GRID, y: tA2State.A.y - 3 * GRID, color: '#43aa8b' }, { x: tA2State.A.x - 3 * GRID, y: tA2State.A.y, color: '#7c5cff' }, { x: tA2State.A.x, y: tA2State.A.y + 3 * GRID, color: '#4cc9f0' } ]; }
-
 function resizeTeacherA2Canvas() { if (!tA2Canvas || !tA2Ctx) return; const rect = tA2Canvas.getBoundingClientRect(); tA2Canvas.width = rect.width; tA2Canvas.height = rect.height; tA2State.width = tA2Canvas.width; tA2State.height = tA2Canvas.height; const cx = Math.round(tA2State.width / 2 / GRID) * GRID; const cy = Math.round(tA2State.height / 2 / GRID) * GRID; tA2State.A = { x: cx, y: cy }; tA2State.B = { x: cx + 3 * GRID, y: cy }; initTeacherA2FixedStars(); drawTeacherA2(); }
-
-function drawTeacherA2() { 
-  if (!tA2Ctx) return; 
-  tA2Ctx.clearRect(0, 0, tA2State.width, tA2State.height); 
-  tA2Ctx.fillStyle = '#f8fbff'; tA2Ctx.fillRect(0, 0, tA2State.width, tA2State.height); 
-  drawGrid(tA2Ctx, tA2State.width, tA2State.height); 
-  
-  const isCenterA = tA2State.selectedCenterType === 'A';
-  const center = isCenterA ? tA2State.A : tA2State.B; 
-  const A_rot = rotatePoint(tA2State.A, center, tA2State.angle); 
-  const B_rot = rotatePoint(tA2State.B, center, tA2State.angle); 
-  
-  drawTrail(tA2Ctx, tA2State.trails.A, 'rgba(231, 76, 60, 0.45)'); 
-  drawTrail(tA2Ctx, tA2State.trails.B, 'rgba(39, 174, 96, 0.45)'); 
-  
-  drawSegment(tA2Ctx, tA2State.A, tA2State.B, true); // 虚线
-  drawSegment(tA2Ctx, A_rot, B_rot, false); // 实线
-  
-  const hasRotated = Math.abs(tA2State.angle) > 0.1;
-  if (!hasRotated) {
-    drawPoint(tA2Ctx, tA2State.A, 'A', '#94a3b8');
-    drawPoint(tA2Ctx, tA2State.B, 'B', '#94a3b8');
-  } else {
-    if (isCenterA) {
-      drawCenter(tA2Ctx, tA2State.A, 'A', '#27ae60');
-      drawPoint(tA2Ctx, tA2State.B, 'B', '#94a3b8');
-      drawPoint(tA2Ctx, B_rot, "B'", '#e74c3c');
-    } else {
-      drawCenter(tA2Ctx, tA2State.B, 'B', '#27ae60');
-      drawPoint(tA2Ctx, tA2State.A, 'A', '#94a3b8');
-      drawPoint(tA2Ctx, A_rot, "A'", '#e74c3c');
-    }
-  }
-  
-  if (hasRotated) {
-    const rotPt = isCenterA ? tA2State.B : tA2State.A;
-    const startAng = Math.atan2(rotPt.y - center.y, rotPt.x - center.x);
-    const endAng = startAng + tA2State.angle * Math.PI / 180;
-    const radius = Math.hypot(rotPt.x - center.x, rotPt.y - center.y) * 0.6;
-    drawRotationArc(tA2Ctx, center, radius, startAng, endAng, '#f59e0b');
-  }
-
-  tA2State.fixedStars.forEach(s => drawStarShape(tA2Ctx, s.x, s.y, s.color)); 
-  tA2Canvas.style.cursor = tA2State.animating ? 'wait' : 'grab'; 
-}
-
+function drawTeacherA2() { if (!tA2Ctx) return; tA2Ctx.clearRect(0, 0, tA2State.width, tA2State.height); tA2Ctx.fillStyle = '#f8fbff'; tA2Ctx.fillRect(0, 0, tA2State.width, tA2State.height); drawGrid(tA2Ctx, tA2State.width, tA2State.height); const isCenterA = tA2State.selectedCenterType === 'A'; const center = isCenterA ? tA2State.A : tA2State.B; const A_rot = rotatePoint(tA2State.A, center, tA2State.angle); const B_rot = rotatePoint(tA2State.B, center, tA2State.angle); drawTrail(tA2Ctx, tA2State.trails.A, 'rgba(231, 76, 60, 0.45)'); drawTrail(tA2Ctx, tA2State.trails.B, 'rgba(39, 174, 96, 0.45)'); drawSegment(tA2Ctx, tA2State.A, tA2State.B, true); drawSegment(tA2Ctx, A_rot, B_rot, false); const hasRotated = Math.abs(tA2State.angle) > 0.1; if (!hasRotated) { drawPoint(tA2Ctx, tA2State.A, 'A', '#94a3b8'); drawPoint(tA2Ctx, tA2State.B, 'B', '#94a3b8'); } else { if (isCenterA) { drawCenter(tA2Ctx, tA2State.A, 'A', '#27ae60'); drawPoint(tA2Ctx, tA2State.B, 'B', '#94a3b8'); drawPoint(tA2Ctx, B_rot, "B'", '#e74c3c'); } else { drawCenter(tA2Ctx, tA2State.B, 'B', '#27ae60'); drawPoint(tA2Ctx, tA2State.A, 'A', '#94a3b8'); drawPoint(tA2Ctx, A_rot, "A'", '#e74c3c'); } } if (hasRotated) { const rotPt = isCenterA ? tA2State.B : tA2State.A; const startAng = Math.atan2(rotPt.y - center.y, rotPt.x - center.x); const endAng = startAng + tA2State.angle * Math.PI / 180; const radius = Math.hypot(rotPt.x - center.x, rotPt.y - center.y) * 0.6; drawRotationArc(tA2Ctx, center, radius, startAng, endAng, '#f59e0b'); } tA2State.fixedStars.forEach(s => drawStarShape(tA2Ctx, s.x, s.y, s.color)); tA2Canvas.style.cursor = tA2State.animating ? 'wait' : 'grab'; }
 function resetTeacherA2() { if (tA2State.rafId) cancelAnimationFrame(tA2State.rafId); tA2State.animating = false; tA2State.angle = 0; tA2State.selectedCenterType = 'A'; tA2State.draggingLine = false; document.querySelector('input[name="tA2CenterChoice"][value="A"]').checked = true; drawTeacherA2(); }
-
-function startTeacherA2AutoRun() { 
-  if (tA2State.animating) return; 
-  tA2State.angle = 0; tA2State.animating = true; 
-  const step = () => { 
-    tA2State.angle += 2; 
-    const isCenterA = tA2State.selectedCenterType === 'A';
-    const center = isCenterA ? tA2State.A : tA2State.B; 
-    const A = rotatePoint(tA2State.A, center, tA2State.angle); 
-    const B = rotatePoint(tA2State.B, center, tA2State.angle); 
-    if (isCenterA) { if (tA2State.activeTrail.B) tA2State.trails.B.push({ x: B.x, y: B.y }); }
-    else { if (tA2State.activeTrail.A) tA2State.trails.A.push({ x: A.x, y: A.y }); }
-    drawTeacherA2(); 
-    if (tA2State.angle >= 360) { tA2State.angle = 360; tA2State.animating = false; cancelAnimationFrame(tA2State.rafId); drawTeacherA2(); return; } 
-    tA2State.rafId = requestAnimationFrame(step); 
-  }; 
-  tA2State.rafId = requestAnimationFrame(step); 
-}
-
+function startTeacherA2AutoRun() { if (tA2State.animating) return; tA2State.angle = 0; tA2State.animating = true; const step = () => { tA2State.angle += 2; const isCenterA = tA2State.selectedCenterType === 'A'; const center = isCenterA ? tA2State.A : tA2State.B; const A = rotatePoint(tA2State.A, center, tA2State.angle); const B = rotatePoint(tA2State.B, center, tA2State.angle); if (isCenterA) { if (tA2State.activeTrail.B) tA2State.trails.B.push({ x: B.x, y: B.y }); } else { if (tA2State.activeTrail.A) tA2State.trails.A.push({ x: A.x, y: A.y }); } drawTeacherA2(); if (tA2State.angle >= 360) { tA2State.angle = 360; tA2State.animating = false; cancelAnimationFrame(tA2State.rafId); drawTeacherA2(); return; } tA2State.rafId = requestAnimationFrame(step); }; tA2State.rafId = requestAnimationFrame(step); }
 document.querySelectorAll('input[name="tA2CenterChoice"]').forEach(r => r.addEventListener('change', () => { tA2State.selectedCenterType = document.querySelector('input[name="tA2CenterChoice"]:checked').value; tA2State.angle = 0; drawTeacherA2(); }));
 document.getElementById('tA2TrailA')?.addEventListener('change', (e) => { tA2State.activeTrail.A = e.target.checked; });
 document.getElementById('tA2TrailB')?.addEventListener('change', (e) => { tA2State.activeTrail.B = e.target.checked; });
 document.getElementById('tA2ClearTrailBtn')?.addEventListener('click', () => { tA2State.trails = { A: [], B: [] }; drawTeacherA2(); });
 document.getElementById('tA2ResetBtn')?.addEventListener('click', resetTeacherA2);
 document.getElementById('tA2AutoRunBtn')?.addEventListener('click', startTeacherA2AutoRun);
+if (tA2Canvas) { tA2Canvas.style.touchAction = 'none'; tA2Canvas.addEventListener('pointerdown', (e) => { if (tA2State.animating) return; e.preventDefault(); const rect = tA2Canvas.getBoundingClientRect(); const p = { x: e.clientX - rect.left, y: e.clientY - rect.top }; const center = tA2State.selectedCenterType === 'A' ? tA2State.A : tA2State.B; const A = rotatePoint(tA2State.A, center, tA2State.angle); const B = rotatePoint(tA2State.B, center, tA2State.angle); if (Math.hypot(A.x - p.x, A.y - p.y) < 35 || Math.hypot(B.x - p.x, B.y - p.y) < 35) { tA2State.draggingLine = true; tA2State.lastMouseAngle = Math.atan2(p.y - center.y, p.x - center.x); } }); tA2Canvas.addEventListener('pointermove', (e) => { if (!tA2State.draggingLine || tA2State.animating) return; e.preventDefault(); const rect = tA2Canvas.getBoundingClientRect(); const p = { x: e.clientX - rect.left, y: e.clientY - rect.top }; const isCenterA = tA2State.selectedCenterType === 'A'; const center = isCenterA ? tA2State.A : tA2State.B; const currentMouseAngle = Math.atan2(p.y - center.y, p.x - center.x); let delta = normalizeAngleDiff(currentMouseAngle - tA2State.lastMouseAngle); tA2State.angle += delta * 180 / Math.PI; tA2State.lastMouseAngle = currentMouseAngle; const A = rotatePoint(tA2State.A, center, tA2State.angle); const B = rotatePoint(tA2State.B, center, tA2State.angle); if (isCenterA) { if (tA2State.activeTrail.B) tA2State.trails.B.push({ x: B.x, y: B.y }); } else { if (tA2State.activeTrail.A) tA2State.trails.A.push({ x: A.x, y: A.y }); } drawTeacherA2(); }); tA2Canvas.addEventListener('pointerup', () => { tA2State.draggingLine = false; }); tA2Canvas.addEventListener('pointerleave', () => { tA2State.draggingLine = false; }); }
 
-if (tA2Canvas) { 
-  tA2Canvas.style.touchAction = 'none'; 
-  tA2Canvas.addEventListener('pointerdown', (e) => { 
-    if (tA2State.animating) return; e.preventDefault(); 
-    const rect = tA2Canvas.getBoundingClientRect(); const p = { x: e.clientX - rect.left, y: e.clientY - rect.top }; 
-    const center = tA2State.selectedCenterType === 'A' ? tA2State.A : tA2State.B; 
-    const A = rotatePoint(tA2State.A, center, tA2State.angle); const B = rotatePoint(tA2State.B, center, tA2State.angle); 
-    if (Math.hypot(A.x - p.x, A.y - p.y) < 35 || Math.hypot(B.x - p.x, B.y - p.y) < 35) { 
-      tA2State.draggingLine = true; 
-      tA2State.lastMouseAngle = Math.atan2(p.y - center.y, p.x - center.x); 
-    } 
-  }); 
-  tA2Canvas.addEventListener('pointermove', (e) => { 
-    if (!tA2State.draggingLine || tA2State.animating) return; e.preventDefault(); 
-    const rect = tA2Canvas.getBoundingClientRect(); const p = { x: e.clientX - rect.left, y: e.clientY - rect.top }; 
-    const isCenterA = tA2State.selectedCenterType === 'A';
-    const center = isCenterA ? tA2State.A : tA2State.B; 
-    const currentMouseAngle = Math.atan2(p.y - center.y, p.x - center.x);
-    let delta = normalizeAngleDiff(currentMouseAngle - tA2State.lastMouseAngle); 
-    tA2State.angle += delta * 180 / Math.PI; 
-    tA2State.lastMouseAngle = currentMouseAngle;
-    const A = rotatePoint(tA2State.A, center, tA2State.angle); const B = rotatePoint(tA2State.B, center, tA2State.angle); 
-    if (isCenterA) { if (tA2State.activeTrail.B) tA2State.trails.B.push({ x: B.x, y: B.y }); }
-    else { if (tA2State.activeTrail.A) tA2State.trails.A.push({ x: A.x, y: A.y }); }
-    drawTeacherA2(); 
-  }); 
-  tA2Canvas.addEventListener('pointerup', () => { tA2State.draggingLine = false; }); 
-  tA2Canvas.addEventListener('pointerleave', () => { tA2State.draggingLine = false; }); 
-}
-
-// ===================== 任务三 画布逻辑 =====================
 const tA3State = { width: 0, height: 0, center: null, A: null, B: null, O: null, hasO: false, selectedCenterType: 'A', angle: 0, animating: false, rafId: null, mode: 'star', stars: [], draggingStarIndex: -1, dragOffsetX: 0, dragOffsetY: 0, draggingLine: false, draggingO: false, lineDragOffset: { x: 0, y: 0 }, lastMouseAngle: 0, trails: { A: [], B: [], O: [] }, activeTrail: { A: false, B: false, O: false }, page: 1, awaitingOPlacement: false };
-
 function resizeTeacherA3Canvas() { if (!tA3Canvas || !tA3Ctx) return; const rect = tA3Canvas.getBoundingClientRect(); tA3Canvas.width = rect.width; tA3Canvas.height = rect.height; tA3State.width = tA3Canvas.width; tA3State.height = tA3Canvas.height; const cx = Math.round(tA3State.width / 2 / GRID) * GRID; const cy = Math.round(tA3State.height / 2 / GRID) * GRID; tA3State.center = { x: cx, y: cy }; tA3State.A = { x: cx - 2 * GRID, y: cy }; tA3State.B = { x: cx + 2 * GRID, y: cy }; if (!tA3State.O) tA3State.O = { x: cx, y: cy - 2 * GRID }; drawTeacherA3(); }
-
 function drawTeacherA3() { 
   if (!tA3Ctx) return; 
   tA3Ctx.clearRect(0, 0, tA3State.width, tA3State.height); 
   tA3Ctx.fillStyle = '#f8fbff'; tA3Ctx.fillRect(0, 0, tA3State.width, tA3State.height); 
   drawGrid(tA3Ctx, tA3State.width, tA3State.height); 
-  
   const center = tA3State.selectedCenterType === 'A' ? tA3State.A : (tA3State.selectedCenterType === 'B' ? tA3State.B : tA3State.O); 
   const A_rot = rotatePoint(tA3State.A, center, tA3State.angle); 
   const B_rot = rotatePoint(tA3State.B, center, tA3State.angle); 
-  
   drawTrail(tA3Ctx, tA3State.trails.A, 'rgba(231, 76, 60, 0.45)'); 
   drawTrail(tA3Ctx, tA3State.trails.B, 'rgba(39, 174, 96, 0.45)'); 
-  
-  drawSegment(tA3Ctx, tA3State.A, tA3State.B, true); // 虚线
-  drawSegment(tA3Ctx, A_rot, B_rot, false); // 实线
-  
-  const hasRotated = Math.abs(tA3State.angle) > 0.1;
-  if (!hasRotated) {
-    drawPoint(tA3Ctx, tA3State.A, 'A', '#94a3b8');
-    drawPoint(tA3Ctx, tA3State.B, 'B', '#94a3b8');
-  } else {
-    if (tA3State.selectedCenterType === 'O') {
-      drawPoint(tA3Ctx, tA3State.A, 'A', '#94a3b8');
-      drawPoint(tA3Ctx, tA3State.B, 'B', '#94a3b8');
-      drawPoint(tA3Ctx, A_rot, "A'", '#e74c3c');
-      drawPoint(tA3Ctx, B_rot, "B'", '#e74c3c');
-    } else if (tA3State.selectedCenterType === 'A') {
-      drawCenter(tA3Ctx, tA3State.A, 'A', '#27ae60');
-      drawPoint(tA3Ctx, tA3State.B, 'B', '#94a3b8');
-      drawPoint(tA3Ctx, B_rot, "B'", '#e74c3c');
-    } else if (tA3State.selectedCenterType === 'B') {
-      drawCenter(tA3Ctx, tA3State.B, 'B', '#27ae60');
-      drawPoint(tA3Ctx, tA3State.A, 'A', '#94a3b8');
-      drawPoint(tA3Ctx, A_rot, "A'", '#e74c3c');
-    }
-  }
-  
+  drawSegment(tA3Ctx, tA3State.A, tA3State.B, true); 
+  drawSegment(tA3Ctx, A_rot, B_rot, false); 
+  const hasRotated = Math.abs(tA3State.angle) > 0.1; 
+  if (!hasRotated) { 
+    drawPoint(tA3Ctx, tA3State.A, 'A', '#94a3b8'); 
+    drawPoint(tA3Ctx, tA3State.B, 'B', '#94a3b8'); 
+  } else { 
+    if (tA3State.selectedCenterType === 'O') { 
+      drawPoint(tA3Ctx, tA3State.A, 'A', '#94a3b8'); 
+      drawPoint(tA3Ctx, tA3State.B, 'B', '#94a3b8'); 
+      drawPoint(tA3Ctx, A_rot, "A'", '#e74c3c'); 
+      drawPoint(tA3Ctx, B_rot, "B'", '#e74c3c'); 
+    } else if (tA3State.selectedCenterType === 'A') { 
+      drawCenter(tA3Ctx, tA3State.A, 'A', '#27ae60'); 
+      drawPoint(tA3Ctx, tA3State.B, 'B', '#94a3b8'); 
+      drawPoint(tA3Ctx, B_rot, "B'", '#e74c3c'); 
+    } else if (tA3State.selectedCenterType === 'B') { 
+      drawCenter(tA3Ctx, tA3State.B, 'B', '#27ae60'); 
+      drawPoint(tA3Ctx, tA3State.A, 'A', '#94a3b8'); 
+      drawPoint(tA3Ctx, A_rot, "A'", '#e74c3c'); 
+    } 
+  } 
   if (tA3State.page === 2 && tA3State.hasO) drawCenter(tA3Ctx, tA3State.O, 'O点', '#f472b6'); 
-  
-  if (hasRotated) {
-    if (tA3State.selectedCenterType === 'O') {
-      const startAngA = Math.atan2(tA3State.A.y - center.y, tA3State.A.x - center.x);
-      const endAngA = startAngA + tA3State.angle * Math.PI / 180;
-      drawRotationArc(tA3Ctx, center, Math.hypot(tA3State.A.x - center.x, tA3State.A.y - center.y) * 0.6, startAngA, endAngA, '#f59e0b');
-      const startAngB = Math.atan2(tA3State.B.y - center.y, tA3State.B.x - center.x);
-      const endAngB = startAngB + tA3State.angle * Math.PI / 180;
-      drawRotationArc(tA3Ctx, center, Math.hypot(tA3State.B.x - center.x, tA3State.B.y - center.y) * 0.6, startAngB, endAngB, '#3b82f6');
-    } else {
-      const isCenterA = tA3State.selectedCenterType === 'A';
-      const rotPt = isCenterA ? tA3State.B : tA3State.A;
-      const startAng = Math.atan2(rotPt.y - center.y, rotPt.x - center.x);
-      const endAng = startAng + tA3State.angle * Math.PI / 180;
-      const radius = Math.hypot(rotPt.x - center.x, rotPt.y - center.y) * 0.6;
-      drawRotationArc(tA3Ctx, center, radius, startAng, endAng, '#f59e0b');
-    }
-  }
-
+  if (hasRotated) { 
+    if (tA3State.selectedCenterType === 'O') { 
+      const startAngA = Math.atan2(tA3State.A.y - center.y, tA3State.A.x - center.x); 
+      const endAngA = startAngA + tA3State.angle * Math.PI / 180; 
+      // 【修改】将O点旋转圆弧半径系数从 0.6 调小至 0.3
+      drawRotationArc(tA3Ctx, center, Math.hypot(tA3State.A.x - center.x, tA3State.A.y - center.y) * 0.3, startAngA, endAngA, '#f59e0b'); 
+      const startAngB = Math.atan2(tA3State.B.y - center.y, tA3State.B.x - center.x); 
+      const endAngB = startAngB + tA3State.angle * Math.PI / 180; 
+      drawRotationArc(tA3Ctx, center, Math.hypot(tA3State.B.x - center.x, tA3State.B.y - center.y) * 0.3, startAngB, endAngB, '#3b82f6'); 
+    } else { 
+      const isCenterA = tA3State.selectedCenterType === 'A'; 
+      const rotPt = isCenterA ? tA3State.B : tA3State.A; 
+      const startAng = Math.atan2(rotPt.y - center.y, rotPt.x - center.x); 
+      const endAng = startAng + tA3State.angle * Math.PI / 180; 
+      const radius = Math.hypot(rotPt.x - center.x, rotPt.y - center.y) * 0.6; 
+      drawRotationArc(tA3Ctx, center, radius, startAng, endAng, '#f59e0b'); 
+    } 
+  } 
   tA3State.stars.forEach((s, i) => drawStarShape(tA3Ctx, s.x, s.y, STAR_COLORS[i % STAR_COLORS.length])); 
   tA3Canvas.style.cursor = tA3State.mode === 'star' ? 'crosshair' : 'grab'; 
 }
-
-function setTeacherA3Page(page) { 
-  tA3State.page = page; 
-  if (page === 2) { 
-    if (tA3State.rafId) cancelAnimationFrame(tA3State.rafId); 
-    tA3State.angle = 0; tA3State.stars = []; tA3State.trails = { A: [], B: [], O: [] }; 
-    tA3State.hasO = false; tA3State.awaitingOPlacement = false; tA3State.mode = 'line'; tA3State.selectedCenterType = 'A'; 
-    document.querySelector('input[name="tA3CenterChoice"][value="A"]').checked = true; 
-  } else { 
-    tA3State.mode = 'star'; tA3State.selectedCenterType = 'A'; 
-    document.querySelector('input[name="tA3CenterChoice"][value="A"]').checked = true; 
-  } 
-  tA3State.activeTrail = { A: false, B: false, O: false }; 
-  const trailA = document.getElementById('tA3TrailA'); if(trailA) trailA.checked = false; 
-  const trailB = document.getElementById('tA3TrailB'); if(trailB) trailB.checked = false; 
-  document.getElementById('tA3Page2Tools').style.display = page === 2 ? 'flex' : 'none'; 
-  document.getElementById('tA3PrevBtn').style.display = page === 1 ? 'none' : 'inline-block'; 
-  document.getElementById('tA3NextBtn').style.display = page === 2 ? 'none' : 'inline-block'; 
-  document.getElementById('tA3OCenterWrap').style.display = 'none'; 
-  if(tA3Msg) tA3Msg.textContent = ''; drawTeacherA3(); 
-}
-
-function startTeacherA3Animation() { 
-  if (tA3State.animating) return; 
-  if (tA3State.selectedCenterType === 'O' && !tA3State.hasO) { if(tA3Msg) tA3Msg.textContent = '请先添加 O 点'; return; } 
-  tA3State.angle = 0; tA3State.animating = true; 
-  const step = () => { 
-    tA3State.angle += 2; 
-    const center = tA3State.selectedCenterType === 'A' ? tA3State.A : (tA3State.selectedCenterType === 'B' ? tA3State.B : tA3State.O); 
-    const A = rotatePoint(tA3State.A, center, tA3State.angle); const B = rotatePoint(tA3State.B, center, tA3State.angle); 
-    if (tA3State.selectedCenterType === 'O') {
-      if (tA3State.activeTrail.A) tA3State.trails.A.push({ x: A.x, y: A.y });
-      if (tA3State.activeTrail.B) tA3State.trails.B.push({ x: B.x, y: B.y });
-    } else if (tA3State.selectedCenterType === 'A') {
-      if (tA3State.activeTrail.B) tA3State.trails.B.push({ x: B.x, y: B.y });
-    } else if (tA3State.selectedCenterType === 'B') {
-      if (tA3State.activeTrail.A) tA3State.trails.A.push({ x: A.x, y: A.y });
-    }
-    drawTeacherA3(); 
-    if (tA3State.angle >= 360) { tA3State.angle = 360; tA3State.animating = false; cancelAnimationFrame(tA3State.rafId); drawTeacherA3(); return; } 
-    tA3State.rafId = requestAnimationFrame(step); 
-  }; 
-  tA3State.rafId = requestAnimationFrame(step); 
-}
-
-function resetTeacherA3() { 
-  if (tA3State.rafId) cancelAnimationFrame(tA3State.rafId); 
-  tA3State.animating = false; tA3State.angle = 0; tA3State.mode = 'star'; tA3State.stars = []; 
-  tA3State.trails = { A: [], B: [], O: [] }; tA3State.selectedCenterType = 'A'; tA3State.hasO = false; 
-  tA3State.activeTrail = { A: false, B: false, O: false }; 
-  const trailA = document.getElementById('tA3TrailA'); if(trailA) trailA.checked = false; 
-  const trailB = document.getElementById('tA3TrailB'); if(trailB) trailB.checked = false; 
-  document.querySelector('input[name="tA3CenterChoice"][value="A"]').checked = true; 
-  if(tA3Msg) tA3Msg.textContent = '已恢复到初始状态'; drawTeacherA3(); 
-}
-
+function setTeacherA3Page(page) { tA3State.page = page; if (page === 2) { if (tA3State.rafId) cancelAnimationFrame(tA3State.rafId); tA3State.angle = 0; tA3State.stars = []; tA3State.trails = { A: [], B: [], O: [] }; tA3State.hasO = false; tA3State.awaitingOPlacement = false; tA3State.mode = 'line'; tA3State.selectedCenterType = 'A'; document.querySelector('input[name="tA3CenterChoice"][value="A"]').checked = true; } else { tA3State.mode = 'star'; tA3State.selectedCenterType = 'A'; document.querySelector('input[name="tA3CenterChoice"][value="A"]').checked = true; } tA3State.activeTrail = { A: false, B: false, O: false }; const trailA = document.getElementById('tA3TrailA'); if(trailA) trailA.checked = false; const trailB = document.getElementById('tA3TrailB'); if(trailB) trailB.checked = false; document.getElementById('tA3Page2Tools').style.display = page === 2 ? 'flex' : 'none'; document.getElementById('tA3PrevBtn').style.display = page === 1 ? 'none' : 'inline-block'; document.getElementById('tA3NextBtn').style.display = page === 2 ? 'none' : 'inline-block'; document.getElementById('tA3OCenterWrap').style.display = 'none'; if(tA3Msg) tA3Msg.textContent = ''; drawTeacherA3(); }
+function startTeacherA3Animation() { if (tA3State.animating) return; if (tA3State.selectedCenterType === 'O' && !tA3State.hasO) { if(tA3Msg) tA3Msg.textContent = '请先添加 O 点'; return; } tA3State.angle = 0; tA3State.animating = true; const step = () => { tA3State.angle += 2; const center = tA3State.selectedCenterType === 'A' ? tA3State.A : (tA3State.selectedCenterType === 'B' ? tA3State.B : tA3State.O); const A = rotatePoint(tA3State.A, center, tA3State.angle); const B = rotatePoint(tA3State.B, center, tA3State.angle); if (tA3State.selectedCenterType === 'O') { if (tA3State.activeTrail.A) tA3State.trails.A.push({ x: A.x, y: A.y }); if (tA3State.activeTrail.B) tA3State.trails.B.push({ x: B.x, y: B.y }); } else if (tA3State.selectedCenterType === 'A') { if (tA3State.activeTrail.B) tA3State.trails.B.push({ x: B.x, y: B.y }); } else if (tA3State.selectedCenterType === 'B') { if (tA3State.activeTrail.A) tA3State.trails.A.push({ x: A.x, y: A.y }); } drawTeacherA3(); if (tA3State.angle >= 360) { tA3State.angle = 360; tA3State.animating = false; cancelAnimationFrame(tA3State.rafId); drawTeacherA3(); return; } tA3State.rafId = requestAnimationFrame(step); }; tA3State.rafId = requestAnimationFrame(step); }
+function resetTeacherA3() { if (tA3State.rafId) cancelAnimationFrame(tA3State.rafId); tA3State.animating = false; tA3State.angle = 0; tA3State.mode = 'star'; tA3State.stars = []; tA3State.trails = { A: [], B: [], O: [] }; tA3State.selectedCenterType = 'A'; tA3State.hasO = false; tA3State.activeTrail = { A: false, B: false, O: false }; const trailA = document.getElementById('tA3TrailA'); if(trailA) trailA.checked = false; const trailB = document.getElementById('tA3TrailB'); if(trailB) trailB.checked = false; document.querySelector('input[name="tA3CenterChoice"][value="A"]').checked = true; if(tA3Msg) tA3Msg.textContent = '已恢复到初始状态'; drawTeacherA3(); }
 document.querySelectorAll('input[name="tA3CenterChoice"]').forEach(r => r.addEventListener('change', () => { tA3State.selectedCenterType = document.querySelector('input[name="tA3CenterChoice"]:checked').value; tA3State.angle = 0; drawTeacherA3(); }));
 document.getElementById('tA3TrailA')?.addEventListener('change', (e) => { tA3State.activeTrail.A = e.target.checked; });
 document.getElementById('tA3TrailB')?.addEventListener('change', (e) => { tA3State.activeTrail.B = e.target.checked; });
@@ -475,186 +180,54 @@ document.getElementById('tA3ResetBtn')?.addEventListener('click', resetTeacherA3
 document.getElementById('tA3AddOBtn')?.addEventListener('click', () => { tA3State.awaitingOPlacement = true; tA3State.mode = 'line'; if(tA3Msg) tA3Msg.textContent = '请点击网格点放置 O 点'; drawTeacherA3(); });
 document.getElementById('tA3PrevBtn')?.addEventListener('click', () => setTeacherA3Page(1));
 document.getElementById('tA3NextBtn')?.addEventListener('click', () => setTeacherA3Page(2));
+if (tA3Canvas) { tA3Canvas.style.touchAction = 'none'; tA3Canvas.addEventListener('pointerdown', (e) => { e.preventDefault(); const rect = tA3Canvas.getBoundingClientRect(); const p = { x: e.clientX - rect.left, y: e.clientY - rect.top }; if (tA3State.page === 2 && tA3State.awaitingOPlacement) { tA3State.O = snapPoint(p); tA3State.hasO = true; tA3State.awaitingOPlacement = false; tA3State.selectedCenterType = 'O'; document.querySelector('input[name="tA3CenterChoice"][value="O"]').checked = true; drawTeacherA3(); return; } if (tA3State.mode === 'star') { const gridP = snapPoint(p); const idx = tA3State.stars.findIndex(s => Math.hypot(s.x - gridP.x, s.y - gridP.y) < 35); if (idx >= 0) { tA3State.draggingStarIndex = idx; tA3State.dragOffsetX = tA3State.stars[idx].x - gridP.x; tA3State.dragOffsetY = tA3State.stars[idx].y - gridP.y; } else { if (tA3State.stars.length >= 5) return; tA3State.stars.push({ x: gridP.x, y: gridP.y }); tA3State.draggingStarIndex = tA3State.stars.length - 1; tA3State.dragOffsetX = 0; tA3State.dragOffsetY = 0; } drawTeacherA3(); return; } if (tA3State.mode === 'line') { const center = tA3State.selectedCenterType === 'A' ? tA3State.A : (tA3State.selectedCenterType === 'B' ? tA3State.B : tA3State.O); const A = rotatePoint(tA3State.A, center, tA3State.angle); const B = rotatePoint(tA3State.B, center, tA3State.angle); if (tA3State.page === 2 && tA3State.hasO && Math.hypot(tA3State.O.x - p.x, tA3State.O.y - p.y) < 35) { tA3State.draggingO = true; tA3State.lineDragOffset = { x: p.x - tA3State.O.x, y: p.y - tA3State.O.y }; return; } if (Math.hypot(A.x - p.x, A.y - p.y) < 35 || Math.hypot(B.x - p.x, B.y - p.y) < 35) { tA3State.draggingLine = true; tA3State.lastMouseAngle = Math.atan2(p.y - center.y, p.x - center.x); } } }); tA3Canvas.addEventListener('pointermove', (e) => { e.preventDefault(); const rect = tA3Canvas.getBoundingClientRect(); const p = { x: e.clientX - rect.left, y: e.clientY - rect.top }; if (tA3State.mode === 'star' && tA3State.draggingStarIndex >= 0) { tA3State.stars[tA3State.draggingStarIndex] = snapPoint({ x: p.x + tA3State.dragOffsetX, y: p.y + tA3State.dragOffsetY }); drawTeacherA3(); return; } if (tA3State.mode === 'line' && tA3State.draggingO && tA3State.page === 2 && tA3State.hasO) { tA3State.O = snapPoint({ x: p.x - tA3State.lineDragOffset.x, y: p.y - tA3State.lineDragOffset.y }); tA3State.selectedCenterType = 'O'; document.querySelector('input[name="tA3CenterChoice"][value="O"]').checked = true; drawTeacherA3(); return; } if (tA3State.mode === 'line' && tA3State.draggingLine) { const center = tA3State.selectedCenterType === 'A' ? tA3State.A : (tA3State.selectedCenterType === 'B' ? tA3State.B : tA3State.O); const currentMouseAngle = Math.atan2(p.y - center.y, p.x - center.x); let delta = normalizeAngleDiff(currentMouseAngle - tA3State.lastMouseAngle); tA3State.angle += delta * 180 / Math.PI; tA3State.lastMouseAngle = currentMouseAngle; const A = rotatePoint(tA3State.A, center, tA3State.angle); const B = rotatePoint(tA3State.B, center, tA3State.angle); if (tA3State.selectedCenterType === 'O') { if (tA3State.activeTrail.A) tA3State.trails.A.push({ x: A.x, y: A.y }); if (tA3State.activeTrail.B) tA3State.trails.B.push({ x: B.x, y: B.y }); } else if (tA3State.selectedCenterType === 'A') { if (tA3State.activeTrail.B) tA3State.trails.B.push({ x: B.x, y: B.y }); } else if (tA3State.selectedCenterType === 'B') { if (tA3State.activeTrail.A) tA3State.trails.A.push({ x: A.x, y: A.y }); } drawTeacherA3(); } }); tA3Canvas.addEventListener('pointerup', () => { tA3State.draggingStarIndex = -1; tA3State.draggingLine = false; tA3State.draggingO = false; }); tA3Canvas.addEventListener('pointerleave', () => { tA3State.draggingStarIndex = -1; tA3State.draggingLine = false; tA3State.draggingO = false; }); }
 
-if (tA3Canvas) { 
-  tA3Canvas.style.touchAction = 'none'; 
-  tA3Canvas.addEventListener('pointerdown', (e) => { 
-    e.preventDefault(); const rect = tA3Canvas.getBoundingClientRect(); const p = { x: e.clientX - rect.left, y: e.clientY - rect.top }; 
-    if (tA3State.page === 2 && tA3State.awaitingOPlacement) { tA3State.O = snapPoint(p); tA3State.hasO = true; tA3State.awaitingOPlacement = false; tA3State.selectedCenterType = 'O'; document.querySelector('input[name="tA3CenterChoice"][value="O"]').checked = true; drawTeacherA3(); return; } 
-    if (tA3State.mode === 'star') { 
-      const gridP = snapPoint(p); const idx = tA3State.stars.findIndex(s => Math.hypot(s.x - gridP.x, s.y - gridP.y) < 35); 
-      if (idx >= 0) { tA3State.draggingStarIndex = idx; tA3State.dragOffsetX = tA3State.stars[idx].x - gridP.x; tA3State.dragOffsetY = tA3State.stars[idx].y - gridP.y; } 
-      else { if (tA3State.stars.length >= 5) return; tA3State.stars.push({ x: gridP.x, y: gridP.y }); tA3State.draggingStarIndex = tA3State.stars.length - 1; tA3State.dragOffsetX = 0; tA3State.dragOffsetY = 0; } 
-      drawTeacherA3(); return; 
-    } 
-    if (tA3State.mode === 'line') { 
-      const center = tA3State.selectedCenterType === 'A' ? tA3State.A : (tA3State.selectedCenterType === 'B' ? tA3State.B : tA3State.O); 
-      const A = rotatePoint(tA3State.A, center, tA3State.angle); const B = rotatePoint(tA3State.B, center, tA3State.angle); 
-      if (tA3State.page === 2 && tA3State.hasO && Math.hypot(tA3State.O.x - p.x, tA3State.O.y - p.y) < 35) { tA3State.draggingO = true; tA3State.lineDragOffset = { x: p.x - tA3State.O.x, y: p.y - tA3State.O.y }; return; } 
-      if (Math.hypot(A.x - p.x, A.y - p.y) < 35 || Math.hypot(B.x - p.x, B.y - p.y) < 35) { 
-        tA3State.draggingLine = true; 
-        tA3State.lastMouseAngle = Math.atan2(p.y - center.y, p.x - center.x); 
-      } 
-    } 
-  }); 
-  tA3Canvas.addEventListener('pointermove', (e) => { 
-    e.preventDefault(); const rect = tA3Canvas.getBoundingClientRect(); const p = { x: e.clientX - rect.left, y: e.clientY - rect.top }; 
-    if (tA3State.mode === 'star' && tA3State.draggingStarIndex >= 0) { tA3State.stars[tA3State.draggingStarIndex] = snapPoint({ x: p.x + tA3State.dragOffsetX, y: p.y + tA3State.dragOffsetY }); drawTeacherA3(); return; } 
-    if (tA3State.mode === 'line' && tA3State.draggingO && tA3State.page === 2 && tA3State.hasO) { tA3State.O = snapPoint({ x: p.x - tA3State.lineDragOffset.x, y: p.y - tA3State.lineDragOffset.y }); tA3State.selectedCenterType = 'O'; document.querySelector('input[name="tA3CenterChoice"][value="O"]').checked = true; drawTeacherA3(); return; } 
-    if (tA3State.mode === 'line' && tA3State.draggingLine) { 
-      const center = tA3State.selectedCenterType === 'A' ? tA3State.A : (tA3State.selectedCenterType === 'B' ? tA3State.B : tA3State.O); 
-      const currentMouseAngle = Math.atan2(p.y - center.y, p.x - center.x);
-      let delta = normalizeAngleDiff(currentMouseAngle - tA3State.lastMouseAngle); 
-      tA3State.angle += delta * 180 / Math.PI; 
-      tA3State.lastMouseAngle = currentMouseAngle;
-      const A = rotatePoint(tA3State.A, center, tA3State.angle); const B = rotatePoint(tA3State.B, center, tA3State.angle); 
-      if (tA3State.selectedCenterType === 'O') {
-        if (tA3State.activeTrail.A) tA3State.trails.A.push({ x: A.x, y: A.y });
-        if (tA3State.activeTrail.B) tA3State.trails.B.push({ x: B.x, y: B.y });
-      } else if (tA3State.selectedCenterType === 'A') {
-        if (tA3State.activeTrail.B) tA3State.trails.B.push({ x: B.x, y: B.y });
-      } else if (tA3State.selectedCenterType === 'B') {
-        if (tA3State.activeTrail.A) tA3State.trails.A.push({ x: A.x, y: A.y });
-      }
-      drawTeacherA3(); 
-    } 
-  }); 
-  tA3Canvas.addEventListener('pointerup', () => { tA3State.draggingStarIndex = -1; tA3State.draggingLine = false; tA3State.draggingO = false; }); 
-  tA3Canvas.addEventListener('pointerleave', () => { tA3State.draggingStarIndex = -1; tA3State.draggingLine = false; tA3State.draggingO = false; }); 
-}
+const tA4State = { width: 0, height: 0, M: null, N: null, P: null, page: 1, isDrawing: false, drawStart: null, drawEnd: null, drawnLine: null, tool: 'none', strokes: [], currentStroke: null };
+function resizeTeacherA4Canvas() { if (!tA4Canvas || !tA4Ctx) return; if (tA4State.page === 2) { tA4Canvas.style.height = '504px'; } else { tA4Canvas.style.height = '420px'; } const rect = tA4Canvas.getBoundingClientRect(); tA4Canvas.width = rect.width; tA4Canvas.height = rect.height; tA4State.width = tA4Canvas.width; tA4State.height = tA4Canvas.height; const cx = Math.round(tA4State.width / 2 / GRID) * GRID; const cy = Math.round(tA4State.height / 2 / GRID) * GRID; if (tA4State.page === 1) { tA4State.P = { x: cx, y: cy }; tA4State.M = { x: cx - 2 * GRID, y: cy }; tA4State.N = { x: cx + 3 * GRID, y: cy }; if(tA4TaskText) tA4TaskText.textContent = '任务要求：画出线段MN绕点P顺时针方向旋转90°后的图形。'; } else { tA4State.M = { x: cx - 3 * GRID, y: cy }; tA4State.N = { x: cx + 2 * GRID, y: cy }; tA4State.P = { x: cx + 4 * GRID, y: cy }; if(tA4TaskText) tA4TaskText.textContent = '任务要求：画出线段MN绕点P顺时针方向旋转90°后的图形。'; } tA4State.isDrawing = false; tA4State.drawStart = null; tA4State.drawEnd = null; tA4State.drawnLine = null; drawTeacherA4(); }
+function drawTeacherA4() { if (!tA4Ctx) return; tA4Ctx.clearRect(0, 0, tA4State.width, tA4State.height); tA4Ctx.fillStyle = '#f8fbff'; tA4Ctx.fillRect(0, 0, tA4State.width, tA4State.height); drawGrid(tA4Ctx, tA4State.width, tA4State.height); drawSegment(tA4Ctx, tA4State.M, tA4State.N, tA4State.drawnLine !== null); drawPoint(tA4Ctx, tA4State.M, 'M', '#94a3b8'); drawPoint(tA4Ctx, tA4State.N, 'N', '#94a3b8'); drawCenter(tA4Ctx, tA4State.P, 'P', '#27ae60'); if (tA4State.drawnLine) { const { start, end } = tA4State.drawnLine; drawSegment(tA4Ctx, start, end, false); drawPoint(tA4Ctx, start, '', '#e74c3c'); drawPoint(tA4Ctx, end, '', '#e74c3c'); } else if (tA4State.isDrawing && tA4State.drawStart && tA4State.drawEnd) { drawSegment(tA4Ctx, tA4State.drawStart, tA4State.drawEnd, false); drawPoint(tA4Ctx, tA4State.drawEnd, '?', '#e74c3c'); } drawStrokes(tA4Ctx, tA4State.strokes); if (tA4State.tool === 'pen') tA4Canvas.style.cursor = 'crosshair'; else if (tA4State.tool === 'eraser') tA4Canvas.style.cursor = 'cell'; else tA4Canvas.style.cursor = tA4State.drawnLine ? 'default' : 'crosshair'; }
+function resetTeacherA4() { tA4State.isDrawing = false; tA4State.drawStart = null; tA4State.drawEnd = null; tA4State.drawnLine = null; tA4State.strokes = []; tA4State.tool = 'none'; document.getElementById('tA4PenBtn')?.classList.remove('tool-active'); document.getElementById('tA4EraserBtn')?.classList.remove('tool-active'); drawTeacherA4(); }
+function setTeacherA4Page(page) { tA4State.page = page; document.getElementById('tA4PrevBtn').style.display = page === 1 ? 'none' : 'inline-block'; document.getElementById('tA4NextBtn').style.display = page === 2 ? 'none' : 'inline-block'; tA4State.strokes = []; resizeTeacherA4Canvas(); }
+document.getElementById('tA4ResetBtn')?.addEventListener('click', resetTeacherA4);
+document.getElementById('tA4PrevBtn')?.addEventListener('click', () => setTeacherA4Page(1));
+document.getElementById('tA4NextBtn')?.addEventListener('click', () => setTeacherA4Page(2));
+document.getElementById('tA4PenBtn')?.addEventListener('click', () => { tA4State.tool = tA4State.tool === 'pen' ? 'none' : 'pen'; document.getElementById('tA4PenBtn').classList.toggle('tool-active', tA4State.tool === 'pen'); document.getElementById('tA4EraserBtn').classList.remove('tool-active'); drawTeacherA4(); });
+document.getElementById('tA4EraserBtn')?.addEventListener('click', () => { tA4State.tool = tA4State.tool === 'eraser' ? 'none' : 'eraser'; document.getElementById('tA4EraserBtn').classList.toggle('tool-active', tA4State.tool === 'eraser'); document.getElementById('tA4PenBtn').classList.remove('tool-active'); drawTeacherA4(); });
+if (tA4Canvas) { tA4Canvas.style.touchAction = 'none'; tA4Canvas.addEventListener('pointerdown', (e) => { e.preventDefault(); const rect = tA4Canvas.getBoundingClientRect(); const p = { x: e.clientX - rect.left, y: e.clientY - rect.top }; if (tA4State.tool === 'pen') { tA4State.currentStroke = { points: [p], color: '#ef4444', width: 4 }; tA4State.strokes.push(tA4State.currentStroke); drawTeacherA4(); return; } if (tA4State.tool === 'eraser') { eraseAt(tA4State.strokes, p.x, p.y); drawTeacherA4(); return; } if (tA4State.drawnLine) return; const snapP = snapPoint(p); tA4State.isDrawing = true; tA4State.drawStart = snapP; tA4State.drawEnd = snapP; drawTeacherA4(); }); tA4Canvas.addEventListener('pointermove', (e) => { e.preventDefault(); const rect = tA4Canvas.getBoundingClientRect(); const p = { x: e.clientX - rect.left, y: e.clientY - rect.top }; if (tA4State.tool === 'pen' && tA4State.currentStroke) { tA4State.currentStroke.points.push(p); drawTeacherA4(); return; } if (tA4State.tool === 'eraser' && e.buttons === 1) { eraseAt(tA4State.strokes, p.x, p.y); drawTeacherA4(); return; } if (!tA4State.isDrawing) return; tA4State.drawEnd = snapPoint(p); drawTeacherA4(); }); tA4Canvas.addEventListener('pointerup', (e) => { tA4State.currentStroke = null; if (!tA4State.isDrawing) return; tA4State.isDrawing = false; const rect = tA4Canvas.getBoundingClientRect(); const end = snapPoint({ x: e.clientX - rect.left, y: e.clientY - rect.top }); if (tA4State.drawStart.x !== end.x || tA4State.drawStart.y !== end.y) { tA4State.drawnLine = { start: tA4State.drawStart, end: end }; } tA4State.drawStart = null; tA4State.drawEnd = null; drawTeacherA4(); }); tA4Canvas.addEventListener('pointerleave', () => { tA4State.currentStroke = null; if(tA4State.isDrawing) { tA4State.isDrawing = false; drawTeacherA4(); } }); }
 
-// ===================== 作品与提交管理逻辑 =====================
 function updateActivityUI() {
   tabBtns.forEach(btn => btn.classList.toggle('active', Number(btn.dataset.activity) === currentActivity));
   localStorage.setItem('teacherCurrentActivity', String(currentActivity));
-
   const isActivity2 = currentActivity === 2;
   const isActivity3 = currentActivity === 3;
+  const isActivity4 = currentActivity === 4;
   const isA3CanvasMode = isActivity3 && tA3Panel.style.display === 'block';
-
-  if (refreshBtn) refreshBtn.style.display = (isActivity2 || isA3CanvasMode) ? 'none' : 'inline-block';
-  if (clearBtn) clearBtn.style.display = (isActivity2 || isA3CanvasMode) ? 'none' : 'inline-block';
-  if (worksEl) worksEl.style.display = (isActivity2 || isA3CanvasMode) ? 'none' : 'block';
-
+  const isA4CanvasMode = isActivity4 && tA4Panel.style.display === 'block';
+  if (refreshBtn) refreshBtn.style.display = (isActivity2 || isA3CanvasMode || isA4CanvasMode) ? 'none' : 'inline-block';
+  if (clearBtn) clearBtn.style.display = (isActivity2 || isA3CanvasMode || isA4CanvasMode) ? 'none' : 'inline-block';
+  if (worksEl) worksEl.style.display = (isActivity2 || isA3CanvasMode || isA4CanvasMode) ? 'none' : 'block';
   tA2Panel.style.display = isActivity2 ? 'block' : 'none';
   if (isActivity2) setTimeout(resizeTeacherA2Canvas, 50);
-
   toggleA3CanvasBtn.style.display = isActivity3 ? 'inline-block' : 'none';
-  
-  if (isActivity3) {
-    if (!isA3CanvasMode) {
-      // 默认查看作品模式
-      tA3Panel.style.display = 'none'; 
-      submissionWrapper.style.display = 'block';
-      if(worksEl) worksEl.style.display = 'block'; 
-      toggleA3CanvasBtn.textContent = '学生画布';
-    }
-  } else {
-    tA3Panel.style.display = 'none'; 
-    submissionWrapper.style.display = 'none';
-  }
+  if (isActivity3 && !isA3CanvasMode) { tA3Panel.style.display = 'none'; submissionWrapper.style.display = 'block'; if(worksEl) worksEl.style.display = 'block'; toggleA3CanvasBtn.textContent = '学生画布'; } 
+  else if (!isActivity3) { tA3Panel.style.display = 'none'; submissionWrapper.style.display = 'none'; }
+  toggleA4CanvasBtn.style.display = isActivity4 ? 'inline-block' : 'none';
+  if (isActivity4 && !isA4CanvasMode) { tA4Panel.style.display = 'none'; if(worksEl) worksEl.style.display = 'block'; toggleA4CanvasBtn.textContent = '学生画布'; } 
+  else if (!isActivity4) { tA4Panel.style.display = 'none'; }
 }
 
-async function fetchWorks(silent = false) {
-  if (!silent && msgEl) msgEl.textContent = '';
-  try {
-    const res = await fetch(`/api/works?activity=${currentActivity}`, { headers: { 'Authorization': `Bearer ${token}` } });
-    const data = await res.json();
-    if (!res.ok) { if (!silent && msgEl) msgEl.textContent = data.message || '获取作品失败'; if (!silent && worksEl) worksEl.innerHTML = ''; return; }
-    renderWorks(data);
-  } catch (err) { if (!silent && msgEl) msgEl.textContent = '网络错误'; }
-}
+async function fetchWorks(silent = false) { if (!silent && msgEl) msgEl.textContent = ''; try { const res = await fetch(`/api/works?activity=${currentActivity}`, { headers: { 'Authorization': `Bearer ${token}` } }); const data = await res.json(); if (!res.ok) { if (!silent && msgEl) msgEl.textContent = data.message || '获取作品失败'; if (!silent && worksEl) worksEl.innerHTML = ''; return; } renderWorks(data); } catch (err) { if (!silent && msgEl) msgEl.textContent = '网络错误'; } }
+async function fetchSubmissions(silent = false) { if (currentActivity !== 3) return; try { const res = await fetch(`/api/teacher/submissions?activity=3`, { headers: { 'Authorization': `Bearer ${token}` } }); const data = await res.json(); if (!res.ok) { if (!silent && submissionBox) submissionBox.innerHTML = data.message || '获取提交失败'; return; } renderSubmissions(data.submissions || []); } catch (err) { if (!silent && submissionBox) submissionBox.innerHTML = '网络错误'; } }
+function renderSubmissions(list) { if (!submissionBox) return; if (!list.length) { submissionBox.innerHTML = '<p style="grid-column: 1/-1; text-align:center; color:#94a3b8; padding:20px;">暂无提交</p>'; return; } submissionBox.innerHTML = list.map(item => { const starsCount = item.stars ? item.stars.length : 0; const imageHtml = item.imageUrl ? `<img class="work-image" src="${item.imageUrl}" alt="任务三截图" title="点击放大" onclick="openLightbox(this.src)" />` : '<div style="height:100px; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:13px; background:#f8fafc; border-radius:12px; margin-bottom:12px;">(未包含截图)</div>'; const groupText = item.groupName || '未分组'; const nameText = item.studentName || item.studentUsername || ''; const nameHtml = (nameText && nameText !== groupText) ? `<span>👤 ${nameText}</span>` : ''; return `<div class="work-card"><div class="meta">${nameHtml}<span>👥 ${groupText}</span><span>📄 第 ${item.page} 页</span></div>${imageHtml}<div style="font-size:13px; color:#475569; line-height:1.8; margin-bottom:8px;"><div>🎯 中心: <strong>${item.centerChoice}</strong> | 🔄 角度: <strong>${item.currentAngle}°</strong></div><div>⭐ 星星: <strong>${starsCount}</strong> | 📍 O点: <strong>${item.hasOPoint && item.oPoint ? `(${item.oPoint.x}, ${item.oPoint.y})` : '无'}</strong></div></div><div style="font-size:12px; color:#94a3b8; margin-top:auto; padding-top:8px; border-top: 1px dashed #e5edf2;">⏰ ${item.submittedAt || ''}</div></div>`; }).join(''); }
+function renderWorks(list) { if (!worksEl) return; if (currentActivity === 2) { worksEl.innerHTML = ''; return; } worksEl.innerHTML = ''; if (currentActivity === 3) { worksEl.innerHTML = `<p style="color:#64748b; text-align: center; padding: 20px;">任务三的截图和状态已显示在上方的专属区域中。</p>`; fetchSubmissions(); return; } if (!list.length) { worksEl.innerHTML = `<p style="color:#64748b; text-align: center; padding: 20px;">当前 ${activityMap[currentActivity]} 暂无作品</p>`; return; } if (currentActivity === 1) { renderTaskSection('任务一：学生提交状态与截图', list); } else { const section = document.createElement('div'); section.className = 'work-section'; list.forEach(work => { const card = document.createElement('div'); card.className = 'work-card'; let extraMeta = work.activity === 4 && work.task ? `<span>第 ${work.task} 页</span>` : ''; const groupText = work.groupName || '未分组'; const nameText = work.studentName || work.studentUsername || ''; const nameHtml = (nameText && nameText !== groupText) ? `<span>👤 ${nameText}</span>` : ''; const metaHtml = `<span>${activityMap[work.activity] || '未知活动'}</span>${extraMeta}<span>👥 ${groupText}</span>${nameHtml}`; const imageHtml = work.imageUrl ? `<img class="work-image" src="${work.imageUrl}" alt="作品图片" title="点击放大" onclick="openLightbox(this.src)" />` : ''; card.innerHTML = `<div class="meta">${metaHtml}</div>${imageHtml}<div style="font-size:12px; color:#94a3b8; margin-bottom:8px;">⏰ ${work.createdAt || ''}</div><div class="action-row"><button class="btn danger" data-id="${work.id}">删除</button></div>`; card.querySelector('button[data-id]').addEventListener('click', async () => { if (confirm('确定删除该作品吗？')) { await fetch(`/api/works/${work.id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }); fetchWorks(); } }); section.appendChild(card); }); worksEl.appendChild(section); } }
+function renderTaskSection(title, works) { const section = document.createElement('div'); section.className = 'work-section'; const titleEl = document.createElement('h3'); titleEl.className = 'section-title'; titleEl.textContent = title; section.appendChild(titleEl); if (!works.length) { const empty = document.createElement('p'); empty.textContent = '暂无作品'; empty.style.color = '#94a3b8'; section.appendChild(empty); worksEl.appendChild(section); return; } works.forEach(work => { const card = document.createElement('div'); card.className = 'work-card'; const groupText = work.groupName || '未分组'; const nameText = work.studentName || work.studentUsername || ''; const nameHtml = (nameText && nameText !== groupText) ? `<span>👤 ${nameText}</span>` : ''; const metaHtml = `<span>👥 ${groupText}</span>${nameHtml}`; const imageHtml = work.imageUrl ? `<img class="work-image" src="${work.imageUrl}" alt="作品图片" title="点击放大" onclick="openLightbox(this.src)" />` : ''; card.innerHTML = `<div class="meta">${metaHtml}</div>${imageHtml}<div style="font-size:12px; color:#94a3b8; margin-bottom:8px;">⏰ ${work.createdAt || ''}</div><div class="action-row"><button class="btn danger" data-id="${work.id}">删除</button></div>`; card.querySelector('button[data-id]').addEventListener('click', async () => { if (confirm('确定删除该作品吗？')) { await fetch(`/api/works/${work.id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }); fetchWorks(); } }); section.appendChild(card); }); worksEl.appendChild(section); }
 
-async function fetchSubmissions(silent = false) {
-  if (currentActivity !== 3) return;
-  try {
-    const res = await fetch(`/api/teacher/submissions?activity=3`, { headers: { 'Authorization': `Bearer ${token}` } });
-    const data = await res.json();
-    if (!res.ok) { if (!silent && submissionBox) submissionBox.innerHTML = data.message || '获取提交失败'; return; }
-    renderSubmissions(data.submissions || []);
-  } catch (err) { if (!silent && submissionBox) submissionBox.innerHTML = '网络错误'; }
-}
-
-function renderSubmissions(list) {
-  if (!submissionBox) return;
-  if (!list.length) { submissionBox.innerHTML = '<p style="grid-column: 1/-1; text-align:center; color:#94a3b8; padding:20px;">暂无提交</p>'; return; }
-  submissionBox.innerHTML = list.map(item => {
-    const starsCount = item.stars ? item.stars.length : 0;
-    const imageHtml = item.imageUrl ? `<img class="work-image" src="${item.imageUrl}" alt="任务三截图" title="点击放大" onclick="openLightbox(this.src)" />` : '<div style="height:100px; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:13px; background:#f8fafc; border-radius:12px; margin-bottom:12px;">(未包含截图)</div>';
-    const groupText = item.groupName || '未分组';
-    const nameText = item.studentName || item.studentUsername || '';
-    const nameHtml = (nameText && nameText !== groupText) ? `<span>👤 ${nameText}</span>` : '';
-    return `<div class="work-card"><div class="meta">${nameHtml}<span>👥 ${groupText}</span><span>📄 第 ${item.page} 页</span></div>${imageHtml}<div style="font-size:13px; color:#475569; line-height:1.8; margin-bottom:8px;"><div>🎯 中心: <strong>${item.centerChoice}</strong> | 🔄 角度: <strong>${item.currentAngle}°</strong></div><div>⭐ 星星: <strong>${starsCount}</strong> | 📍 O点: <strong>${item.hasOPoint && item.oPoint ? `(${item.oPoint.x}, ${item.oPoint.y})` : '无'}</strong></div></div><div style="font-size:12px; color:#94a3b8; margin-top:auto; padding-top:8px; border-top: 1px dashed #e5edf2;">⏰ ${item.submittedAt || ''}</div></div>`;
-  }).join('');
-}
-
-function renderWorks(list) {
-  if (!worksEl) return; 
-  if (currentActivity === 2) { worksEl.innerHTML = ''; return; }
-  worksEl.innerHTML = '';
-  if (currentActivity === 3) { worksEl.innerHTML = `<p style="color:#64748b; text-align: center; padding: 20px;">任务三的截图和状态已显示在上方的专属区域中。</p>`; fetchSubmissions(); return; }
-  if (!list.length) { worksEl.innerHTML = `<p style="color:#64748b; text-align: center; padding: 20px;">当前 ${activityMap[currentActivity]} 暂无作品</p>`; return; }
-  
-  if (currentActivity === 1) {
-    renderTaskSection('任务一：学生提交状态与截图', list);
-  } else {
-    const section = document.createElement('div'); section.className = 'work-section'; 
-    list.forEach(work => { 
-      const card = document.createElement('div'); card.className = 'work-card';
-      let extraMeta = work.activity === 4 && work.task ? `<span>第 ${work.task} 页</span>` : '';
-      const groupText = work.groupName || '未分组';
-      const nameText = work.studentName || work.studentUsername || '';
-      const nameHtml = (nameText && nameText !== groupText) ? `<span>👤 ${nameText}</span>` : '';
-      const metaHtml = `<span>${activityMap[work.activity] || '未知活动'}</span>${extraMeta}<span>👥 ${groupText}</span>${nameHtml}`;
-      const imageHtml = work.imageUrl ? `<img class="work-image" src="${work.imageUrl}" alt="作品图片" title="点击放大" onclick="openLightbox(this.src)" />` : '';
-      card.innerHTML = `<div class="meta">${metaHtml}</div>${imageHtml}<div style="font-size:12px; color:#94a3b8; margin-bottom:8px;">⏰ ${work.createdAt || ''}</div><div class="action-row"><button class="btn danger" data-id="${work.id}">删除</button></div>`;
-      card.querySelector('button[data-id]').addEventListener('click', async () => { if (confirm('确定删除该作品吗？')) { await fetch(`/api/works/${work.id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }); fetchWorks(); } });
-      section.appendChild(card); 
-    });
-    worksEl.appendChild(section);
-  }
-}
-
-function renderTaskSection(title, works) {
-  const section = document.createElement('div'); section.className = 'work-section';
-  const titleEl = document.createElement('h3'); titleEl.className = 'section-title'; titleEl.textContent = title; section.appendChild(titleEl);
-  if (!works.length) { const empty = document.createElement('p'); empty.textContent = '暂无作品'; empty.style.color = '#94a3b8'; section.appendChild(empty); worksEl.appendChild(section); return; }
-  works.forEach(work => { 
-    const card = document.createElement('div'); card.className = 'work-card';
-    const groupText = work.groupName || '未分组';
-    const nameText = work.studentName || work.studentUsername || '';
-    const nameHtml = (nameText && nameText !== groupText) ? `<span>👤 ${nameText}</span>` : '';
-    const metaHtml = `<span>👥 ${groupText}</span>${nameHtml}`;
-    const imageHtml = work.imageUrl ? `<img class="work-image" src="${work.imageUrl}" alt="作品图片" title="点击放大" onclick="openLightbox(this.src)" />` : '';
-    card.innerHTML = `<div class="meta">${metaHtml}</div>${imageHtml}<div style="font-size:12px; color:#94a3b8; margin-bottom:8px;">⏰ ${work.createdAt || ''}</div><div class="action-row"><button class="btn danger" data-id="${work.id}">删除</button></div>`;
-    card.querySelector('button[data-id]').addEventListener('click', async () => { if (confirm('确定删除该作品吗？')) { await fetch(`/api/works/${work.id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }); fetchWorks(); } });
-    section.appendChild(card); 
-  });
-  worksEl.appendChild(section);
-}
-
-function startPolling() {
-  if (pollInterval) clearInterval(pollInterval);
-  pollInterval = setInterval(() => { fetchWorks(true); if (currentActivity === 3) fetchSubmissions(true); }, 3000); 
-}
-
+function startPolling() { if (pollInterval) clearInterval(pollInterval); pollInterval = setInterval(() => { fetchWorks(true); if (currentActivity === 3) fetchSubmissions(true); }, 3000); }
 tabBtns.forEach(btn => btn.addEventListener('click', () => { currentActivity = Number(btn.dataset.activity); updateActivityUI(); fetchWorks(); }));
 if(refreshBtn) refreshBtn.addEventListener('click', () => fetchWorks());
-if(clearBtn) {
-  clearBtn.addEventListener('click', async () => {
-    if (currentActivity === 3) {
-      if (!confirm('确定清空任务三的所有提交记录吗？')) return;
-      const res = await fetch(`/api/teacher/submissions?activity=3`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
-      if (res.ok) fetchSubmissions(); else msgEl.textContent = '清空失败'; return;
-    }
-    if (!confirm(`确定清空 ${activityMap[currentActivity]} 的所有作品吗？`)) return;
-    const res = await fetch(`/api/works?activity=${currentActivity}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
-    if (res.ok) fetchWorks(); else msgEl.textContent = '清空失败';
-  });
-}
+if(clearBtn) { clearBtn.addEventListener('click', async () => { if (currentActivity === 3) { if (!confirm('确定清空任务三的所有提交记录吗？')) return; const res = await fetch(`/api/teacher/submissions?activity=3`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }); if (res.ok) fetchSubmissions(); else msgEl.textContent = '清空失败'; return; } if (!confirm(`确定清空 ${activityMap[currentActivity]} 的所有作品吗？`)) return; const res = await fetch(`/api/works?activity=${currentActivity}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }); if (res.ok) fetchWorks(); else msgEl.textContent = '清空失败'; }); }
 if(logoutBtn) logoutBtn.addEventListener('click', () => { ['teacherToken', 'role', 'username', 'teacherCurrentActivity'].forEach(k => localStorage.removeItem(k)); if (pollInterval) clearInterval(pollInterval); location.href = '/login.html'; });
 
 updateActivityUI();
 fetchWorks();
 startPolling();
-window.addEventListener('resize', () => { if(currentActivity === 2) resizeTeacherA2Canvas(); if(currentActivity === 3 && tA3Panel.style.display === 'block') resizeTeacherA3Canvas(); });
+window.addEventListener('resize', () => { if(currentActivity === 2) resizeTeacherA2Canvas(); if(currentActivity === 3 && tA3Panel.style.display === 'block') resizeTeacherA3Canvas(); if(currentActivity === 4 && tA4Panel.style.display === 'block') resizeTeacherA4Canvas(); });
